@@ -1,3 +1,9 @@
-export { SearchProvider, useSearch } from './search-context';
-export { ThemeProvider, useTheme } from './theme-context';
-export { WatchlistProvider, useWatchlist } from './watchlist-context';
+// Zustand stores
+export { useSearchStore } from './search-store';
+export { useThemeStore } from './theme-store';
+export { useWatchlistStore } from './watchlist-store';
+
+// Providers
+export { QueryProvider } from './query-provider';
+export { StoreInitializer } from './store-initializer';
+export { AuthProvider } from './auth-provider';

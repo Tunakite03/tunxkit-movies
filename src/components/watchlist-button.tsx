@@ -3,7 +3,8 @@
 import { Heart } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { useWatchlist } from '@/store/watchlist-context';
+import { useSession } from 'next-auth/react';
+import { useWatchlistStore } from '@/store/watchlist-store';
 import { cn } from '@/lib/utils';
 import type { MediaItem } from '@/types';
 
@@ -18,13 +19,14 @@ interface WatchlistButtonProps {
  * Heart button to add/remove a media item from the watchlist.
  */
 export function WatchlistButton({ item, variant = 'icon', className }: WatchlistButtonProps) {
-   const { isInWatchlist, toggleWatchlist } = useWatchlist();
+   const { isInWatchlist, toggleWatchlist } = useWatchlistStore();
+   const { data: session } = useSession();
    const isActive = isInWatchlist(item.id, item.mediaType);
 
    function handleClick(e: React.MouseEvent) {
       e.preventDefault();
       e.stopPropagation();
-      toggleWatchlist(item);
+      toggleWatchlist(item, !!session);
    }
 
    if (variant === 'full') {

@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import { Film, Search, Menu, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { UserMenu } from '@/components/user-menu';
 import { SITE_NAME } from '@/constants';
 
 const NAV_LINKS = [
@@ -22,6 +23,7 @@ export function Header() {
    const router = useRouter();
    const [searchQuery, setSearchQuery] = useState('');
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+   const [isScrolled, setIsScrolled] = useState(false);
 
    function handleSearch(e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
@@ -31,9 +33,25 @@ export function Header() {
       setSearchQuery('');
       setIsMobileMenuOpen(false);
    }
+   useEffect(() => {
+      let lastScrollY = window.scrollY;
+
+      const handleScroll = () => {
+         const currentScrollY = window.scrollY;
+
+         setIsScrolled(currentScrollY > 50);
+
+         lastScrollY = currentScrollY;
+      };
+
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+   }, []);
 
    return (
-      <header className='sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md'>
+      <header
+         className={`sticky top-0 z-50 bg-background/70 backdrop-blur-md transition-transform duration-300 ${isScrolled ? 'border-b border-border' : ''}`}
+      >
          <div className='container mx-auto flex items-center justify-between gap-4 px-4 py-3 md:px-6'>
             {/* Logo */}
             <Link
@@ -75,9 +93,10 @@ export function Header() {
                </div>
             </form>
 
-            {/* Theme Toggle + Mobile Menu Toggle */}
+            {/* Theme Toggle + User Menu + Mobile Menu Toggle */}
             <div className='flex items-center gap-1'>
                <ThemeToggle />
+               <UserMenu />
                <Button
                   variant='ghost'
                   size='icon'

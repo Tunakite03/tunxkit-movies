@@ -1,5 +1,10 @@
+'use client';
+
+import { motion } from 'framer-motion';
+
 import type { MediaItem } from '@/types';
 import { MediaCard } from './media-card';
+import { staggerContainer, fadeInUp, EASE_TRANSITION } from '@/lib/motion';
 
 interface MediaGridProps {
    readonly items: readonly MediaItem[];
@@ -20,14 +25,22 @@ export function MediaGrid({ items, title, emptyMessage = 'Không tìm thấy k�
    return (
       <section>
          {title && <h2 className='mb-4 text-xl font-bold tracking-tight md:text-2xl'>{title}</h2>}
-         <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 md:gap-4'>
+         <motion.div
+            variants={staggerContainer}
+            initial='hidden'
+            animate='visible'
+            className='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 md:gap-4'
+         >
             {items.map((item) => (
-               <MediaCard
+               <motion.div
                   key={`${item.mediaType}-${item.id}`}
-                  item={item}
-               />
+                  variants={fadeInUp}
+                  transition={EASE_TRANSITION}
+               >
+                  <MediaCard item={item} />
+               </motion.div>
             ))}
-         </div>
+         </motion.div>
       </section>
    );
 }

@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from 'next';
+import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
 
-import { Header } from '@/components/header';
-import { Footer } from '@/components/footer';
-import { ScrollProgress } from '@/components/scroll-progress';
-import { ThemeProvider } from '@/store/theme-context';
-import { WatchlistProvider } from '@/store/watchlist-context';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
+import { ProgressBar } from '@/components/progress-bar';
+import { PageTransition } from '@/components/page-transition';
+import { AuthProvider } from '@/store/auth-provider';
+import { StoreInitializer } from '@/store/store-initializer';
+import { QueryProvider } from '@/store/query-provider';
 import { JsonLd, buildWebsiteSchema } from '@/lib/seo';
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, SITE_KEYWORDS } from '@/constants';
 import './globals.css';
@@ -82,16 +85,22 @@ export default function RootLayout({
          </head>
          <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
             <JsonLd data={buildWebsiteSchema()} />
-            <ThemeProvider defaultTheme='dark'>
-               <WatchlistProvider>
-                  <ScrollProgress />
-                  <div className='flex min-h-screen flex-col'>
-                     <Header />
-                     <main className='flex-1'>{children}</main>
-                     <Footer />
-                  </div>
-               </WatchlistProvider>
-            </ThemeProvider>
+            <QueryProvider>
+               <AuthProvider>
+                  <StoreInitializer>
+                     <Suspense>
+                        <ProgressBar />
+                     </Suspense>
+                     <div className='flex min-h-screen flex-col'>
+                        <Header />
+                        <main className='flex-1'>
+                           <PageTransition>{children}</PageTransition>
+                        </main>
+                        <Footer />
+                     </div>
+                  </StoreInitializer>
+               </AuthProvider>
+            </QueryProvider>
          </body>
       </html>
    );

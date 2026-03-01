@@ -3,13 +3,13 @@
 import { Sun, Moon, Monitor } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/store/theme-context';
+import { useThemeStore } from '@/store/theme-store';
 
 /**
  * Theme toggle button that cycles through dark → light → system.
  */
 export function ThemeToggle() {
-   const { theme, setTheme } = useTheme();
+   const { theme, setTheme } = useThemeStore();
 
    function handleToggle() {
       const nextTheme = theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark';

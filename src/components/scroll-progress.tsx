@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowUp } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * Combined scroll progress indicator + back to top button.
@@ -45,16 +44,21 @@ export function ScrollProgress() {
          </div>
 
          {/* Back to Top Button */}
-         <button
-            onClick={scrollToTop}
-            className={cn(
-               'fixed bottom-6 right-6 z-50 flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-300 hover:scale-110',
-               isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none',
+         <AnimatePresence>
+            {isVisible && (
+               <motion.button
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 16 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={scrollToTop}
+                  className='fixed bottom-6 right-6 z-50 flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform'
+                  aria-label='Cuộn lên đầu trang'
+               >
+                  <ArrowUp className='size-5' />
+               </motion.button>
             )}
-            aria-label='Cuộn lên đầu trang'
-         >
-            <ArrowUp className='size-5' />
-         </button>
+         </AnimatePresence>
       </>
    );
 }

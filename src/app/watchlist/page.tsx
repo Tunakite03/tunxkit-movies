@@ -1,13 +1,18 @@
 'use client';
 
 import { Heart, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
 import { MediaCard } from '@/components/media-card';
-import { useWatchlist } from '@/store/watchlist-context';
+import { useSession } from 'next-auth/react';
+import { useWatchlistStore } from '@/store/watchlist-store';
+import { staggerContainer, fadeInUp, EASE_TRANSITION } from '@/lib/motion';
 
 export default function WatchlistPage() {
-   const { items, clearWatchlist, count } = useWatchlist();
+   const { items, clearWatchlist } = useWatchlistStore();
+   const { data: session } = useSession();
+   const count = items.length;
 
    return (
       <div className='container mx-auto px-4 py-8 md:px-6'>
@@ -23,7 +28,7 @@ export default function WatchlistPage() {
                <Button
                   variant='outline'
                   size='sm'
-                  onClick={clearWatchlist}
+                  onClick={() => clearWatchlist(!!session)}
                >
                   <Trash2 className='mr-2 size-4' />
                   Xóa tất cả
@@ -45,14 +50,25 @@ export default function WatchlistPage() {
                </div>
             </div>
          ) : (
-            <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'>
-               {items.map((item) => (
-                  <MediaCard
-                     key={`${item.mediaType}-${item.id}`}
-                     item={item}
-                  />
-               ))}
-            </div>
+            <motion.div
+               variants={staggerContainer}
+               initial='hidden'
+               animate='visible'
+               className='grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+            >
+               <AnimatePresence>
+                  {items.map((item) => (
+                     <motion.div
+                        key={`${item.mediaType}-${item.id}`}
+                        variants={fadeInUp}
+                        transition={EASE_TRANSITION}
+                        layout
+                     >
+                        <MediaCard item={item} />
+                     </motion.div>
+                  ))}
+               </AnimatePresence>
+            </motion.div>
          )}
       </div>
    );

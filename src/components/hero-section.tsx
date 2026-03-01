@@ -1,11 +1,15 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Play, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Movie } from '@/types';
 import { getBackdropUrl, formatRating, getYear } from '@/lib/image-utils';
+import { fadeInUp, EASE_TRANSITION } from '@/lib/motion';
 
 interface HeroSectionProps {
    readonly movie: Movie;
@@ -35,7 +39,13 @@ export function HeroSection({ movie }: HeroSectionProps) {
 
          {/* Content */}
          <div className='container relative mx-auto flex h-full items-end px-4 pb-12 md:px-6 md:pb-16'>
-            <div className='max-w-2xl space-y-4'>
+            <motion.div
+               className='max-w-2xl space-y-4'
+               variants={fadeInUp}
+               initial='hidden'
+               animate='visible'
+               transition={{ ...EASE_TRANSITION, delay: 0.2 }}
+            >
                <div className='flex items-center gap-2'>
                   <Badge
                      variant='default'
@@ -68,7 +78,7 @@ export function HeroSection({ movie }: HeroSectionProps) {
                      <Link href={`/movies/${movie.id}`}>Xem chi tiết</Link>
                   </Button>
                </div>
-            </div>
+            </motion.div>
          </div>
       </section>
    );
