@@ -12,10 +12,28 @@ function createPrismaClient(): PrismaClient {
 }
 
 // Prevent multiple PrismaClient instances in development hot-reload
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-   globalForPrisma.prisma = prisma;
+function getClient(): PrismaClient {
+   if (!globalForPrisma.prisma) {
+      globalForPrisma.prisma = createPrismaClient();
+   }
+   return globalForPrisma.prisma;
 }
+
+/**
+ * Lazy Prisma client proxy.
+ * The underlying PrismaClient is only instantiated on the first database call,
+ * not at module evaluation time. This prevents Next.js builds from failing
+ * when DATABASE_URL is not available during static analysis / page-data collection.
+ */
+export const prisma = new Proxy({} as PrismaClient, {
+   get(_target, prop: string | symbol) {
+      const client = getClient();
+      const value = Reflect.get(client, prop, client) as unknown;
+      if (typeof value === 'function') {
+         return (value as (...args: unknown[]) => unknown).bind(client);
+      }
+      return value;
+   },
+});

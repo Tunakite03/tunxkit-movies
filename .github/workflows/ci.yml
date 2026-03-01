@@ -74,12 +74,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, typecheck]
     env:
-      # Provide placeholder env vars so Next.js build does not fail at import time.
-      # Real secrets are injected only in the deploy job.
-      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      # Placeholders so Next.js config files initialise without errors.
+      # The lazy Prisma proxy means DATABASE_URL is not evaluated at build time.
+      # Real secrets are injected only in the deploy/runtime environment.
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-placeholder-secret' }}
       NEXTAUTH_URL: http://localhost:3000
-      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY || 'ci-placeholder-key' }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL || 'file:./dev.db' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
