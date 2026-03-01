@@ -45,10 +45,7 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
    const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
 
    // resolvedTheme is fully derived — no separate state needed
-   const resolvedTheme = useMemo<ResolvedTheme>(
-      () => (theme === 'system' ? systemTheme : theme),
-      [theme, systemTheme],
-   );
+   const resolvedTheme = useMemo<ResolvedTheme>(() => (theme === 'system' ? systemTheme : theme), [theme, systemTheme]);
 
    // Apply theme class to <html> — pure DOM side-effect, no setState
    useEffect(() => {
