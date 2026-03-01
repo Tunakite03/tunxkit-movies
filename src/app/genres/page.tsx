@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Film, Tv } from 'lucide-react';
 
 import { fetchGenres, fetchTVGenres } from '@/services';
-import { SITE_NAME } from '@/constants';
 
 export const metadata: Metadata = {
    title: 'Thể loại phim',

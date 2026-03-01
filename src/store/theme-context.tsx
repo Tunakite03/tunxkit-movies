@@ -27,50 +27,44 @@ function getSystemTheme(): ResolvedTheme {
    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-function resolveTheme(theme: Theme): ResolvedTheme {
-   if (theme === 'system') return getSystemTheme();
-   return theme;
-}
-
 /**
  * Theme provider for dark/light mode toggle.
  * Persists user preference to localStorage.
  * Defaults to 'dark' if no preference is saved.
  */
 export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProviderProps) {
-   const [theme, setThemeState] = useState<Theme>(defaultTheme);
-   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(resolveTheme(defaultTheme));
-
-   // Load saved theme on mount
-   useEffect(() => {
+   // Initialize from localStorage to avoid sync setState in effect body
+   const [theme, setThemeState] = useState<Theme>(() => {
+      if (typeof window === 'undefined') return defaultTheme;
       const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
-      if (saved && ['light', 'dark', 'system'].includes(saved)) {
-         setThemeState(saved);
-         setResolvedTheme(resolveTheme(saved));
-      }
-   }, []);
+      if (saved && (['light', 'dark', 'system'] as const).includes(saved as Theme)) return saved as Theme;
+      return defaultTheme;
+   });
 
-   // Apply theme class to <html>
+   // Track actual system preference so resolvedTheme can be derived without setState in effect
+   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
+
+   // resolvedTheme is fully derived — no separate state needed
+   const resolvedTheme = useMemo<ResolvedTheme>(
+      () => (theme === 'system' ? systemTheme : theme),
+      [theme, systemTheme],
+   );
+
+   // Apply theme class to <html> — pure DOM side-effect, no setState
    useEffect(() => {
-      const resolved = resolveTheme(theme);
-      setResolvedTheme(resolved);
-
       const root = document.documentElement;
       root.classList.remove('light', 'dark');
-      root.classList.add(resolved);
-   }, [theme]);
+      root.classList.add(resolvedTheme);
+   }, [resolvedTheme]);
 
-   // Listen for system theme changes when in 'system' mode
+   // Listen for system preference changes when theme === 'system'
    useEffect(() => {
       if (theme !== 'system') return;
 
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
       function handleChange() {
-         setResolvedTheme(getSystemTheme());
-         const root = document.documentElement;
-         root.classList.remove('light', 'dark');
-         root.classList.add(getSystemTheme());
+         setSystemTheme(getSystemTheme());
       }
 
       mediaQuery.addEventListener('change', handleChange);

@@ -7,7 +7,7 @@ import { Pagination } from '@/components/pagination';
 import { FilterBar } from '@/components/filter-bar';
 import { fetchTVByCategory, discoverTV } from '@/services';
 import { tvShowToMediaItem } from '@/lib/image-utils';
-import { TV_CATEGORIES, DEFAULT_TV_CATEGORY, SITE_NAME, SITE_URL } from '@/constants';
+import { TV_CATEGORIES, DEFAULT_TV_CATEGORY, SITE_URL } from '@/constants';
 import type { TVCategory, SortBy } from '@/types';
 
 interface TVPageProps {

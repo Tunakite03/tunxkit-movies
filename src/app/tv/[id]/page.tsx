@@ -21,7 +21,7 @@ import {
    tvShowToMediaItem,
 } from '@/lib/image-utils';
 import { JsonLd, buildTVShowSchema, buildBreadcrumbSchema } from '@/lib/seo';
-import { SITE_NAME, SITE_URL } from '@/constants';
+import { SITE_URL } from '@/constants';
 import type { Video } from '@/types';
 
 interface TVDetailPageProps {

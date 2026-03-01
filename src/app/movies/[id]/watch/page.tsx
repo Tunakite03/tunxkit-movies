@@ -13,7 +13,7 @@ import { MovieCarousel } from '@/components/movie-carousel';
 import { fetchMovieDetail, fetchMovieVideos, fetchMovieWatchProviders, fetchSimilarMovies } from '@/services';
 import { getPosterUrl, formatRating, formatDate } from '@/lib/image-utils';
 import { JsonLd, buildMovieSchema, buildBreadcrumbSchema } from '@/lib/seo';
-import { SITE_NAME, SITE_URL } from '@/constants';
+import { SITE_URL } from '@/constants';
 
 interface WatchPageProps {
    readonly params: Promise<{ id: string }>;
