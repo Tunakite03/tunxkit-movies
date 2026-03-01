@@ -7,6 +7,9 @@ import { searchMovies, searchTV } from '@/services';
 import { movieToMediaItem, tvShowToMediaItem } from '@/lib/image-utils';
 import { SITE_NAME, SITE_URL } from '@/constants';
 
+// Always dynamic — results depend on the query string and live TMDB data
+export const dynamic = 'force-dynamic';
+
 interface SearchPageProps {
    readonly searchParams: Promise<{ q?: string; page?: string }>;
 }

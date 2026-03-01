@@ -4,6 +4,9 @@ import { Film, Tv } from 'lucide-react';
 
 import { fetchGenres, fetchTVGenres } from '@/services';
 
+// TMDB data changes frequently and requires a valid API key — skip static prerendering
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
    title: 'Thể loại phim',
    description: 'Khám phá phim theo thể loại - Hành động, kinh dị, lãng mạn, hoạt hình và nhiều hơn nữa.',

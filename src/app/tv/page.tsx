@@ -10,6 +10,9 @@ import { tvShowToMediaItem } from '@/lib/image-utils';
 import { TV_CATEGORIES, DEFAULT_TV_CATEGORY, SITE_URL } from '@/constants';
 import type { TVCategory, SortBy } from '@/types';
 
+// TMDB data changes frequently and requires a valid API key — skip static prerendering
+export const dynamic = 'force-dynamic';
+
 interface TVPageProps {
    readonly searchParams: Promise<{
       category?: string;
