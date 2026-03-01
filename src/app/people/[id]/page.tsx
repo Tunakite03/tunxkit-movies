@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { fetchPersonDetail, fetchPersonCredits } from '@/services';
 import { getProfileUrl, getPosterUrl, formatDate, formatRating, getYear } from '@/lib/image-utils';
 import { JsonLd, buildPersonSchema, buildBreadcrumbSchema } from '@/lib/seo';
-import { SITE_NAME, SITE_URL } from '@/constants';
+import { SITE_URL } from '@/constants';
 import type { PersonMovieCredit, PersonTVCredit } from '@/types';
 
 interface PageProps {

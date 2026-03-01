@@ -22,40 +22,48 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
    ];
 
    /* ── Dynamic pages (trending / popular / top rated) ──── */
-   const [trending, popular, topRated, trendingTV, popularTV] = await Promise.all([
-      fetchTrending(),
-      fetchPopular(),
-      fetchTopRated(),
-      fetchTrendingTV(),
-      fetchPopularTV(),
-   ]);
-
-   // Deduplicate movie IDs
-   const movieIds = new Set<number>();
+   // Gracefully degrade to static-only sitemap when TMDB is unavailable
+   // (e.g. during CI builds where the API key is a placeholder).
    const moviePages: MetadataRoute.Sitemap = [];
-   for (const movie of [...trending.results, ...popular.results, ...topRated.results]) {
-      if (movieIds.has(movie.id)) continue;
-      movieIds.add(movie.id);
-      moviePages.push({
-         url: `${SITE_URL}/movies/${movie.id}`,
-         lastModified: now,
-         changeFrequency: 'weekly',
-         priority: 0.7,
-      });
-   }
-
-   // Deduplicate TV IDs
-   const tvIds = new Set<number>();
    const tvPages: MetadataRoute.Sitemap = [];
-   for (const show of [...trendingTV.results, ...popularTV.results]) {
-      if (tvIds.has(show.id)) continue;
-      tvIds.add(show.id);
-      tvPages.push({
-         url: `${SITE_URL}/tv/${show.id}`,
-         lastModified: now,
-         changeFrequency: 'weekly',
-         priority: 0.7,
-      });
+
+   try {
+      const [trending, popular, topRated, trendingTV, popularTV] = await Promise.all([
+         fetchTrending(),
+         fetchPopular(),
+         fetchTopRated(),
+         fetchTrendingTV(),
+         fetchPopularTV(),
+      ]);
+
+      // Deduplicate movie IDs
+      const movieIds = new Set<number>();
+      for (const movie of [...trending.results, ...popular.results, ...topRated.results]) {
+         if (movieIds.has(movie.id)) continue;
+         movieIds.add(movie.id);
+         moviePages.push({
+            url: `${SITE_URL}/movies/${movie.id}`,
+            lastModified: now,
+            changeFrequency: 'weekly',
+            priority: 0.7,
+         });
+      }
+
+      // Deduplicate TV IDs
+      const tvIds = new Set<number>();
+      for (const show of [...trendingTV.results, ...popularTV.results]) {
+         if (tvIds.has(show.id)) continue;
+         tvIds.add(show.id);
+         tvPages.push({
+            url: `${SITE_URL}/tv/${show.id}`,
+            lastModified: now,
+            changeFrequency: 'weekly',
+            priority: 0.7,
+         });
+      }
+   } catch {
+      // TMDB unavailable at build time — sitemap will only include static pages.
+      // Dynamic entries will be present at runtime when the sitemap is regenerated.
    }
 
    return [...staticPages, ...moviePages, ...tvPages];

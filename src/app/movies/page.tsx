@@ -6,8 +6,11 @@ import { MovieGrid } from '@/components/movie-grid';
 import { Pagination } from '@/components/pagination';
 import { FilterBar } from '@/components/filter-bar';
 import { fetchMoviesByCategory, discoverMovies } from '@/services';
-import { MOVIE_CATEGORIES, DEFAULT_CATEGORY, SITE_NAME, SITE_URL } from '@/constants';
+import { MOVIE_CATEGORIES, DEFAULT_CATEGORY, SITE_URL } from '@/constants';
 import type { MovieCategory, SortBy } from '@/types';
+
+// TMDB data changes frequently and requires a valid API key — skip static prerendering
+export const dynamic = 'force-dynamic';
 
 interface MoviesPageProps {
    readonly searchParams: Promise<{

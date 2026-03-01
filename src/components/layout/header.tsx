@@ -34,14 +34,8 @@ export function Header() {
       setIsMobileMenuOpen(false);
    }
    useEffect(() => {
-      let lastScrollY = window.scrollY;
-
       const handleScroll = () => {
-         const currentScrollY = window.scrollY;
-
-         setIsScrolled(currentScrollY > 50);
-
-         lastScrollY = currentScrollY;
+         setIsScrolled(window.scrollY > 50);
       };
 
       window.addEventListener('scroll', handleScroll);

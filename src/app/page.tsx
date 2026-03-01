@@ -15,6 +15,9 @@ import {
 import { tvShowToMediaItem } from '@/lib/image-utils';
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from '@/constants';
 
+// TMDB data changes frequently and requires a valid API key — skip static prerendering
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
    title: `${SITE_NAME} - Khám phá thế giới điện ảnh`,
    description: SITE_DESCRIPTION,

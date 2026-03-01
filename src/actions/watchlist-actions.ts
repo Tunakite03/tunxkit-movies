@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import type { MediaItem } from '@/types';
+import type { WatchlistItemModel } from '@/generated/prisma/models/WatchlistItem';
 
 /** Add a media item to the signed-in user's watchlist */
 export async function addToWatchlist(item: MediaItem): Promise<void> {
@@ -64,7 +65,7 @@ export async function getWatchlist(): Promise<MediaItem[]> {
       orderBy: { createdAt: 'desc' },
    });
 
-   return items.map((item) => ({
+   return items.map((item: WatchlistItemModel) => ({
       id: item.mediaId,
       title: item.title,
       posterPath: item.posterPath,
