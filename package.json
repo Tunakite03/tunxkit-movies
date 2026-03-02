@@ -23,6 +23,15 @@
       "tailwind-merge": "^3.5.0",
       "zustand": "^5.0.11"
    },
+   "lint-staged": {
+      "*.{ts,tsx}": [
+         "eslint --fix",
+         "prettier --write"
+      ],
+      "*.{json,md,css}": [
+         "prettier --write"
+      ]
+   },
    "devDependencies": {
       "@commitlint/cli": "^20.4.2",
       "@commitlint/config-conventional": "^20.4.2",

@@ -9,32 +9,6 @@ concurrency:
    cancel-in-progress: false
 
 jobs:
-   deploy-backend:
-      name: Deploy to Koyeb
-      runs-on: ubuntu-latest
-      environment: production
-      steps:
-         - name: Checkout
-           uses: actions/checkout@v4
-
-         - name: Detect server changes
-           id: filter
-           uses: dorny/paths-filter@v3
-           with:
-              filters: |
-                 server:
-                   - 'server/**'
-                   - 'Dockerfile'
-                   - '.dockerignore'
-
-         - name: Trigger Koyeb redeploy
-           if: steps.filter.outputs.server == 'true'
-           run: |
-              curl -sf -X POST "https://app.koyeb.com/v1/services/${{ secrets.KOYEB_SERVICE_ID }}/redeploy" \
-                -H "Authorization: Bearer ${{ secrets.KOYEB_API_KEY }}" \
-                -H "Content-Type: application/json" \
-                -d '{"skip_build": false}'
-
    deploy:
       name: Deploy to Vercel
       runs-on: ubuntu-latest
@@ -56,19 +30,15 @@ jobs:
            with:
               node-version: 20
               cache: pnpm
-              cache-dependency-path: fe/pnpm-lock.yaml
 
          - name: Install Vercel CLI
            run: pnpm add -g vercel@latest
 
          - name: Pull Vercel environment
-           working-directory: fe
            run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
          - name: Build project
-           working-directory: fe
            run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
          - name: Deploy to Vercel
-           working-directory: fe
            run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
