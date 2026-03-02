@@ -32,3 +32,4 @@ export const <Name>: FC<<Name>Props> = ({ /* props */ }) => {
 - [ ] Accessible: alt text on images, labels on inputs, aria where needed.
 - [ ] Colors only via Tailwind semantic tokens (no hardcoded hex).
 - [ ] Tested: renders without crash, key interactions covered.
+- [ ] Performance: Large lists are virtualized, expensive children are memoized.

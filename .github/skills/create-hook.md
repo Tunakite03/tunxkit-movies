@@ -38,3 +38,4 @@ export function use<Name>(options: Use<Name>Options): Use<Name>Return {
 - [ ] Cleanup in useEffect return for subscriptions/timers.
 - [ ] No direct DOM manipulation — use refs when needed.
 - [ ] Unit tested in isolation with `renderHook`.
+- [ ] Performance: State updates are batched/deferred if they cause heavy renders.
