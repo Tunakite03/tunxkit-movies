@@ -14,6 +14,9 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fe
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,14 +31,10 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+          cache-dependency-path: fe/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        run: pnpm db:generate
-        env:
-          DATABASE_URL: file:./dev.db
 
       - name: Run ESLint
         run: pnpm lint
@@ -43,6 +42,9 @@ jobs:
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fe
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,30 +59,25 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+          cache-dependency-path: fe/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: pnpm db:generate
-        env:
-          DATABASE_URL: file:./dev.db
-
       - name: Run TypeScript type check
-        run: pnpm tsc --noEmit
+        run: pnpm exec tsc --noEmit
 
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: [lint, typecheck]
+    defaults:
+      run:
+        working-directory: fe
     env:
-      # Placeholders so Next.js config files initialise without errors.
-      # The lazy Prisma proxy means DATABASE_URL is not evaluated at build time.
+      # Placeholder so Next.js config initialises without errors at build time.
       # Real secrets are injected only in the deploy/runtime environment.
-      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-placeholder-secret' }}
-      NEXTAUTH_URL: http://localhost:3000
       TMDB_API_KEY: ${{ secrets.TMDB_API_KEY || 'ci-placeholder-key' }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL || 'file:./dev.db' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,12 +92,10 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+          cache-dependency-path: fe/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        run: pnpm db:generate
 
       - name: Build Next.js app
         run: pnpm build
