@@ -2,18 +2,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
-import { MediaGrid } from '@/components/media-grid';
+import { MovieGrid } from '@/components/movie-grid';
 import { Pagination } from '@/components/pagination';
 import { FilterBar } from '@/components/filter-bar';
-import { fetchTVByCategory, discoverTV } from '@/services';
-import { tvShowToMediaItem } from '@/lib/image-utils';
-import { DRAMA_CATEGORIES, DEFAULT_DRAMA_CATEGORY, SITE_URL } from '@/constants';
-import type { TVCategory, SortBy } from '@/types';
+import { fetchMoviesByCategory, discoverMovies } from '@/services';
+import { CINEMA_CATEGORIES, DEFAULT_CINEMA_CATEGORY, SITE_URL } from '@/constants';
+import type { MovieCategory, SortBy } from '@/types';
 
-// TMDB data changes frequently and requires a valid API key — skip static prerendering
 export const dynamic = 'force-dynamic';
 
-interface TVPageProps {
+interface CinemaPageProps {
    readonly searchParams: Promise<{
       category?: string;
       page?: string;
@@ -23,9 +21,9 @@ interface TVPageProps {
    }>;
 }
 
-/** Validate category param against known drama categories */
-function isValidCategory(value: string | undefined): value is TVCategory {
-   return DRAMA_CATEGORIES.some((c) => c.value === value);
+/** Validate category param against cinema categories (now_playing, upcoming) */
+function isValidCinemaCategory(value: string | undefined): value is MovieCategory {
+   return CINEMA_CATEGORIES.some((c) => c.value === value);
 }
 
 function hasActiveFilters(params: { year?: string; sort?: string; rating?: string }): boolean {
@@ -34,37 +32,36 @@ function hasActiveFilters(params: { year?: string; sort?: string; rating?: strin
    );
 }
 
-export async function generateMetadata({ searchParams }: TVPageProps): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: CinemaPageProps): Promise<Metadata> {
    const { category } = await searchParams;
-   const cat = isValidCategory(category) ? category : DEFAULT_DRAMA_CATEGORY;
-   const label = DRAMA_CATEGORIES.find((c) => c.value === cat)?.label ?? 'Phim bộ';
+   const cat = isValidCinemaCategory(category) ? category : DEFAULT_CINEMA_CATEGORY;
+   const label = CINEMA_CATEGORIES.find((c) => c.value === cat)?.label ?? 'Phim chiếu rạp';
    return {
-      title: `${label} - Phim bộ`,
-      description: `Danh sách phim bộ ${label.toLowerCase()} - Xem phim bộ mới nhất, phim bộ hay nhất.`,
-      alternates: { canonical: `${SITE_URL}/tv` },
+      title: `${label} - Phim chiếu rạp`,
+      description: `Danh sách phim chiếu rạp ${label.toLowerCase()} - Xem phim đang chiếu, phim sắp chiếu tại rạp.`,
+      alternates: { canonical: `${SITE_URL}/cinema` },
    };
 }
 
-export default async function TVPage({ searchParams }: TVPageProps) {
+export default async function CinemaPage({ searchParams }: CinemaPageProps) {
    const params = await searchParams;
-   const category = isValidCategory(params.category) ? params.category : DEFAULT_DRAMA_CATEGORY;
+   const category = isValidCinemaCategory(params.category)
+      ? params.category
+      : DEFAULT_CINEMA_CATEGORY;
    const page = Math.max(1, Number(params.page) || 1);
 
    const useDiscover = hasActiveFilters(params);
 
    const data = useDiscover
-      ? await discoverTV(
+      ? await discoverMovies(
            {
               year: params.year ? Number(params.year) : undefined,
               sortBy: (params.sort as SortBy) || 'popularity.desc',
               minRating: params.rating ? Number(params.rating) : undefined,
            },
            page,
-           'drama',
         )
-      : await fetchTVByCategory(category, page, 'drama');
-
-   const items = data.results.map(tvShowToMediaItem);
+      : await fetchMoviesByCategory(category, page);
 
    const filterSearchParams: Record<string, string> = { category };
    if (params.year) filterSearchParams.year = params.year;
@@ -73,18 +70,18 @@ export default async function TVPage({ searchParams }: TVPageProps) {
 
    return (
       <div className="container mx-auto space-y-6 px-4 py-8 md:px-6">
-         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Phim bộ</h1>
+         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Phim chiếu rạp</h1>
 
          {/* Category Tabs */}
          <div className="flex flex-wrap gap-2">
-            {DRAMA_CATEGORIES.map((cat) => (
+            {CINEMA_CATEGORIES.map((cat) => (
                <Button
                   key={cat.value}
                   variant={cat.value === category ? 'default' : 'outline'}
                   size="sm"
                   asChild
                >
-                  <Link href={`/tv?category=${cat.value}`} prefetch={false}>
+                  <Link href={`/cinema?category=${cat.value}`} prefetch={false}>
                      {cat.label}
                   </Link>
                </Button>
@@ -92,14 +89,16 @@ export default async function TVPage({ searchParams }: TVPageProps) {
          </div>
 
          {/* Advanced Filters */}
-         <FilterBar baseUrl="/tv" preserveParams={{ category }} />
+         <FilterBar baseUrl="/cinema" preserveParams={{ category }} />
 
-         <MediaGrid items={items} emptyMessage="Không tìm thấy phim bộ nào." />
+         {/* Movie Grid */}
+         <MovieGrid movies={[...data.results]} />
 
+         {/* Pagination */}
          <Pagination
             currentPage={page}
             totalPages={data.total_pages}
-            baseUrl="/tv"
+            baseUrl="/cinema"
             searchParams={filterSearchParams}
          />
       </div>

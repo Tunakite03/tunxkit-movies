@@ -11,6 +11,26 @@ export const MOVIE_CATEGORIES: readonly CategoryInfo[] = [
 /** Default movie category */
 export const DEFAULT_CATEGORY: MovieCategory = 'popular';
 
+/** Cinema categories (theatrical movies) */
+export const CINEMA_CATEGORIES: readonly CategoryInfo[] = [
+   { value: 'now_playing', label: 'Đang chiếu' },
+   { value: 'upcoming', label: 'Sắp chiếu' },
+] as const;
+
+/** Default cinema category */
+export const DEFAULT_CINEMA_CATEGORY: MovieCategory = 'now_playing';
+
+/** TV categories for drama (scripted) */
+export const DRAMA_CATEGORIES: readonly TVCategoryInfo[] = [
+   { value: 'popular', label: 'Phổ biến' },
+   { value: 'top_rated', label: 'Đánh giá cao' },
+   { value: 'airing_today', label: 'Chiếu hôm nay' },
+   { value: 'on_the_air', label: 'Đang phát sóng' },
+] as const;
+
+/** Default drama category */
+export const DEFAULT_DRAMA_CATEGORY: TVCategory = 'popular';
+
 /** TV categories with labels */
 export const TV_CATEGORIES: readonly TVCategoryInfo[] = [
    { value: 'popular', label: 'Phổ biến' },
@@ -21,6 +41,15 @@ export const TV_CATEGORIES: readonly TVCategoryInfo[] = [
 
 /** Default TV category */
 export const DEFAULT_TV_CATEGORY: TVCategory = 'popular';
+
+/** TV show (variety/reality/talk) categories */
+export const TV_SHOW_CATEGORIES: readonly TVCategoryInfo[] = [
+   { value: 'popular', label: 'Phổ biến' },
+   { value: 'top_rated', label: 'Đánh giá cao' },
+] as const;
+
+/** Default TV show category */
+export const DEFAULT_TV_SHOW_CATEGORY: TVCategory = 'popular';
 
 /** Sort options for discover filters */
 export const SORT_OPTIONS: readonly SortOption[] = [

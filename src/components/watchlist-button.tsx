@@ -33,7 +33,8 @@ export function WatchlistButton({ item, variant = 'icon', className }: Watchlist
       return (
          <Button
             variant={isActive ? 'default' : 'outline'}
-            size='sm'
+            suppressHydrationWarning
+            size="sm"
             onClick={handleClick}
             className={className}
             aria-label={isActive ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}

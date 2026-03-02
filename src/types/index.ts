@@ -123,6 +123,9 @@ export interface TVShowDetail {
 /** TV Show category for browsing */
 export type TVCategory = 'popular' | 'top_rated' | 'airing_today' | 'on_the_air';
 
+/** TV content type: drama (scripted) vs variety (reality/talk/news) */
+export type TVContentType = 'drama' | 'variety';
+
 /** TV category metadata */
 export interface TVCategoryInfo {
    readonly value: TVCategory;
