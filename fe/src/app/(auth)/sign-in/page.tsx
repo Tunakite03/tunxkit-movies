@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { GoogleLoginButton } from '@/components/google-login-button';
 import { signInWithCredentials } from '@/actions/auth-actions';
 import type { ActionResult } from '@/actions/auth-actions';
 
@@ -28,6 +29,19 @@ export default function SignInPage() {
          <div className='text-center'>
             <h1 className='text-2xl font-bold tracking-tight'>Đăng nhập</h1>
             <p className='mt-1 text-sm text-muted-foreground'>Chào mừng bạn quay trở lại!</p>
+         </div>
+
+         {/* Google OAuth */}
+         <GoogleLoginButton />
+
+         {/* Divider */}
+         <div className='relative'>
+            <div className='absolute inset-0 flex items-center'>
+               <span className='w-full border-t' />
+            </div>
+            <div className='relative flex justify-center text-xs uppercase'>
+               <span className='bg-background px-2 text-muted-foreground'>Hoặc</span>
+            </div>
          </div>
 
          {/* Credentials form */}

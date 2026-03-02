@@ -148,3 +148,10 @@ export async function deleteAccount(): Promise<ActionResult> {
       return { success: false, message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.' };
    }
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+
+/** Redirect user to the backend Google OAuth endpoint */
+export function signInWithGoogle(): void {
+   window.location.href = `${API_URL}/auth/google`;
+}
