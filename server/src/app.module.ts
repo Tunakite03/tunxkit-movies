@@ -3,14 +3,14 @@ import { ConfigModule } from '@nestjs/config';
 
 import { configuration } from '@/config';
 import { PrismaModule } from '@/prisma';
-import { TmdbModule } from '@/tmdb';
-import { AuthModule } from '@/auth';
-import { MoviesModule } from '@/movies';
-import { TvModule } from '@/tv';
-import { SearchModule } from '@/search';
-import { PeopleModule } from '@/people';
-import { GenresModule } from '@/genres';
-import { WatchlistModule } from '@/watchlist';
+import { TmdbModule } from '@/modules/tmdb';
+import { AuthModule } from '@/modules/auth';
+import { MoviesModule } from '@/modules/movies';
+import { TvModule } from '@/modules/tv';
+import { SearchModule } from '@/modules/search';
+import { PeopleModule } from '@/modules/people';
+import { GenresModule } from '@/modules/genres';
+import { WatchlistModule } from '@/modules/watchlist';
 
 @Module({
    imports: [
