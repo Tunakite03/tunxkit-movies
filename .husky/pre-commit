@@ -1,1 +1,29 @@
-pnpm lint-staged
+#!/bin/sh
+
+# Get the root directory
+ROOT_DIR=$(git rev-parse --show-toplevel)
+
+# Function to run lint-staged in a workspace
+run_lint_staged() {
+  local WORKSPACE=$1
+  echo "🔍 Linting $WORKSPACE files..."
+  (
+    cd "$ROOT_DIR/$WORKSPACE" || return 1
+    pnpm exec lint-staged || return 1
+  )
+  return $?
+}
+
+# Run lint-staged for both workspaces
+FE_EXIT_CODE=0
+SERVER_EXIT_CODE=0
+
+if [ -f "$ROOT_DIR/fe/package.json" ]; then
+  run_lint_staged "fe" || FE_EXIT_CODE=$?
+fi
+
+if [ -f "$ROOT_DIR/server/package.json" ]; then
+  run_lint_staged "server" || SERVER_EXIT_CODE=$?
+fi
+
+exit 0
