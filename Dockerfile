@@ -1,24 +1,28 @@
 # ─── Stage 1: Install dependencies ───────────────────────────
 FROM node:20-alpine AS deps
 
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 WORKDIR /app
 
-COPY server/package.json server/package-lock.json* ./
+COPY package.json pnpm-lock.yaml ./
 
-# Install all deps (including devDeps needed for build)
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 
 # ─── Stage 2: Build ───────────────────────────────────────────
 FROM node:20-alpine AS builder
 
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY server/ .
+COPY . .
 
-# Generate Prisma client then compile TypeScript
-RUN npm run build
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN pnpm build
 
 
 # ─── Stage 3: Production runner ───────────────────────────────
@@ -27,27 +31,23 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Install only production dependencies
-COPY server/package.json server/package-lock.json* ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-# Copy compiled app
-COPY --from=builder /app/dist ./dist
+# Copy public assets
+COPY --from=builder /app/public ./public
 
-# Copy Prisma schema + config (needed for `prisma migrate deploy`)
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+# Copy standalone build output
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy the generated Prisma client (contains runtime JS + query engine)
-COPY --from=builder /app/src/generated ./src/generated
+USER nextjs
 
-# Copy entrypoint script
-COPY server/entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+EXPOSE 3000
 
-# Koyeb injects PORT automatically (default 8000).
-# The app reads process.env.PORT so no hardcoding needed.
-EXPOSE 8000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-ENTRYPOINT ["./entrypoint.sh"]
+CMD ["node", "server.js"]
