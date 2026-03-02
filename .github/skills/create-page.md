@@ -33,3 +33,4 @@ export default async function <Name>Page({ params, searchParams }: PageProps) {
 - [ ] Error state: `error.tsx` sibling file.
 - [ ] Route params typed via `PageProps`.
 - [ ] Page container uses `container mx-auto px-4 md:px-6`.
+- [ ] Performance: Heavy client components are dynamically imported (`next/dynamic`).

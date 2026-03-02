@@ -105,6 +105,12 @@ When implementing changes, always provide:
 - Lazy loading: `React.lazy()` + `Suspense` for route-level code splitting.
 - Forms: use controlled components. Validate on blur + submit.
 - Avoid prop drilling > 2 levels. Use context or composition instead.
+- Performance:
+  - Memoize expensive child components (`React.memo`) when parent re-renders frequently.
+  - Use virtualization (`react-window` / `react-virtuoso`) for long lists to prevent DOM bloat.
+  - Avoid creating anonymous objects/functions in render for props passed to memoized children.
+  - Keep React Context flat. Deep context causes widespread re-renders. Use Zustand/Jotai for atomic state.
+  - Use `useTransition` or `useDeferredValue` for non-blocking state updates (e.g., search filtering).
 - Follow docs/ui-style-guide.md strictly.
 - Do not hardcode colors; use semantic Tailwind tokens.
 - Use rounded-lg as default radius.
