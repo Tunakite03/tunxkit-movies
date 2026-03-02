@@ -1,0 +1,28 @@
+# Frontend — not needed for server build
+fe/
+
+# Dependencies (rebuilt in container)
+server/node_modules
+node_modules
+
+# Build artifacts
+server/dist
+
+# Env files
+.env
+.env.*
+server/.env
+server/.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Git & OS
+.git
+.gitignore
+.github
+.DS_Store
+
+# Docs
+*.md
