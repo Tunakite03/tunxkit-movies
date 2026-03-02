@@ -15,6 +15,8 @@ const NAV_LINKS = [
    { href: '/', label: 'Trang chủ' },
    { href: '/movies', label: 'Phim lẻ' },
    { href: '/tv', label: 'Phim bộ' },
+   { href: '/cinema', label: 'Phim chiếu rạp' },
+   { href: '/tv-shows', label: 'TV Show' },
    { href: '/genres', label: 'Thể loại' },
    { href: '/watchlist', label: 'Yêu thích' },
 ] as const;
@@ -47,31 +49,28 @@ export function Header() {
       <header
          className={`sticky top-0 z-50 bg-background/70 backdrop-blur-md transition-transform duration-300 ${isScrolled ? 'border-b border-border' : ''}`}
       >
-         <div className='container mx-auto flex items-center justify-between gap-4 px-4 py-3 md:px-6'>
+         <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3 md:px-6">
             {/* Logo */}
-            <Link
-               href='/'
-               className='flex items-center gap-2 shrink-0'
-            >
-               <Film className='size-6 text-primary' />
-               <span className='text-lg font-bold tracking-tight'>{SITE_NAME}</span>
+            <Link href="/" className="flex items-center gap-2 shrink-0">
+               <Film className="size-6 text-primary" />
+               <span className="text-lg font-bold tracking-tight">{SITE_NAME}</span>
             </Link>
 
             {/* Desktop Nav */}
-            <nav className='hidden items-center gap-1 md:flex'>
+            <nav className="hidden items-center gap-1 md:flex">
                {NAV_LINKS.map((link) => {
-                  const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
+                  const isActive =
+                     link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
 
                   return (
                      <Button
                         key={link.href}
                         variant={'ghost'}
-                        size='sm'
+                        size="sm"
                         asChild
                         className={`relative px-3 py-2 text-sm font-medium transition-colors rounded-md ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
                      >
                         <Link href={link.href}>{link.label}</Link>
-                       
                      </Button>
                   );
                })}
@@ -80,63 +79,61 @@ export function Header() {
             {/* Desktop Search */}
             <form
                onSubmit={handleSearch}
-               className='hidden max-w-sm flex-1 items-center gap-2 md:flex'
+               className="hidden max-w-sm flex-1 items-center gap-2 md:flex"
             >
-               <div className='relative flex-1'>
-                  <Search className='absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+               <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                     type='search'
-                     placeholder='Tìm kiếm phim...'
+                     type="search"
+                     placeholder="Tìm kiếm phim..."
                      value={searchQuery}
                      onChange={(e) => setSearchQuery(e.target.value)}
-                     className='pl-9'
+                     className="pl-9"
                   />
                </div>
             </form>
 
             {/* Theme Toggle + User Menu + Mobile Menu Toggle */}
-            <div className='flex items-center gap-1'>
+            <div className="flex items-center gap-1">
                <ThemeToggle />
                <UserMenu />
                <Button
-                  variant='ghost'
-                  size='icon'
-                  className='md:hidden'
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   aria-label={isMobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
                >
-                  {isMobileMenuOpen ? <X className='size-5' /> : <Menu className='size-5' />}
+                  {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
                </Button>
             </div>
          </div>
 
          {/* Mobile Menu */}
          {isMobileMenuOpen && (
-            <div className='border-t border-border px-4 pb-4 md:hidden'>
-               <form
-                  onSubmit={handleSearch}
-                  className='mb-3 mt-3'
-               >
-                  <div className='relative'>
-                     <Search className='absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+            <div className="border-t border-border px-4 pb-4 md:hidden">
+               <form onSubmit={handleSearch} className="mb-3 mt-3">
+                  <div className="relative">
+                     <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                      <Input
-                        type='search'
-                        placeholder='Tìm kiếm phim...'
+                        type="search"
+                        placeholder="Tìm kiếm phim..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className='pl-9'
+                        className="pl-9"
                      />
                   </div>
                </form>
-               <nav className='flex flex-col gap-1'>
+               <nav className="flex flex-col gap-1">
                   {NAV_LINKS.map((link) => {
-                     const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
+                     const isActive =
+                        link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
 
                      return (
                         <Button
                            key={link.href}
-                           variant={isActive ? 'secondary' : 'ghost'}
-                           size='sm'
+                           variant="ghost"
+                           size="sm"
                            className={`justify-start ${isActive ? 'font-semibold text-primary' : 'text-muted-foreground'}`}
                            asChild
                            onClick={() => setIsMobileMenuOpen(false)}

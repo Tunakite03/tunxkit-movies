@@ -39,12 +39,18 @@ export async function signUp(formData: FormData): Promise<ActionResult> {
       });
       return { success: true, message: 'Đăng ký thành công!' };
    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.' };
+      return {
+         success: false,
+         message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      };
    }
 }
 
 /** Sign in with credentials — stores JWT token on success */
-export async function signInWithCredentials(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+export async function signInWithCredentials(
+   _prevState: ActionResult,
+   formData: FormData,
+): Promise<ActionResult> {
    const email = formData.get('email') as string | null;
    const password = formData.get('password') as string | null;
 
@@ -72,7 +78,10 @@ export function signOutAction(): void {
 }
 
 /** Update the current user's display name */
-export async function updateProfile(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+export async function updateProfile(
+   _prevState: ActionResult,
+   formData: FormData,
+): Promise<ActionResult> {
    const { token } = useAuthStore.getState();
    if (!token) {
       return { success: false, message: 'Bạn cần đăng nhập để thực hiện thao tác này.' };
@@ -94,7 +103,10 @@ export async function updateProfile(_prevState: ActionResult, formData: FormData
       useAuthStore.getState().updateUser({ name: name.trim() });
       return result;
    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.' };
+      return {
+         success: false,
+         message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      };
    }
 }
 
@@ -124,7 +136,10 @@ export async function updatePassword(formData: FormData): Promise<ActionResult> 
          cache: 'no-store',
       });
    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.' };
+      return {
+         success: false,
+         message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      };
    }
 }
 
@@ -145,11 +160,59 @@ export async function deleteAccount(): Promise<ActionResult> {
       useAuthStore.getState().logout();
       return result;
    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.' };
+      return {
+         success: false,
+         message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      };
    }
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+
+/** Send a password reset email to the given address */
+export async function forgotPassword(email: string): Promise<ActionResult> {
+   if (!email.trim()) {
+      return { success: false, message: 'Email không được để trống.' };
+   }
+
+   try {
+      return await fetchAPI<ActionResult>('/auth/forgot-password', {
+         method: 'POST',
+         body: { email: email.trim() },
+         revalidate: false,
+         cache: 'no-store',
+      });
+   } catch (error) {
+      return {
+         success: false,
+         message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      };
+   }
+}
+
+/** Reset password using the token from the reset email */
+export async function resetPassword(token: string, password: string): Promise<ActionResult> {
+   if (!token || !password) {
+      return { success: false, message: 'Token và mật khẩu không được để trống.' };
+   }
+   if (password.length < 8) {
+      return { success: false, message: 'Mật khẩu phải có ít nhất 8 ký tự.' };
+   }
+
+   try {
+      return await fetchAPI<ActionResult>('/auth/reset-password', {
+         method: 'POST',
+         body: { token, password },
+         revalidate: false,
+         cache: 'no-store',
+      });
+   } catch (error) {
+      return {
+         success: false,
+         message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      };
+   }
+}
 
 /** Redirect user to the backend Google OAuth endpoint */
 export function signInWithGoogle(): void {

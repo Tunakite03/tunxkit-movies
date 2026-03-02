@@ -5,6 +5,7 @@ import type {
    VideosResponse,
    TMDBResponse,
    TVCategory,
+   TVContentType,
    WatchProviderResponse,
 } from '@/types';
 import type { DiscoverFilters } from '@/types';
@@ -18,34 +19,65 @@ const CATEGORY_PATH: Record<TVCategory, string> = {
 };
 
 /** Fetch trending TV shows (week) */
-export function fetchTrendingTV(page = 1): Promise<TMDBResponse<TVShow>> {
-   return fetchAPI<TMDBResponse<TVShow>>('/tv/trending', { params: { page } });
+export function fetchTrendingTV(
+   page = 1,
+   contentType?: TVContentType,
+): Promise<TMDBResponse<TVShow>> {
+   return fetchAPI<TMDBResponse<TVShow>>('/tv/trending', {
+      params: { page, ...(contentType && { contentType }) },
+   });
 }
 
 /** Fetch TV shows by category */
-export function fetchTVByCategory(category: TVCategory, page = 1): Promise<TMDBResponse<TVShow>> {
+export function fetchTVByCategory(
+   category: TVCategory,
+   page = 1,
+   contentType?: TVContentType,
+): Promise<TMDBResponse<TVShow>> {
    const path = CATEGORY_PATH[category] ?? '/tv/popular';
-   return fetchAPI<TMDBResponse<TVShow>>(path, { params: { page } });
+   return fetchAPI<TMDBResponse<TVShow>>(path, {
+      params: { page, ...(contentType && { contentType }) },
+   });
 }
 
 /** Fetch popular TV shows */
-export function fetchPopularTV(page = 1): Promise<TMDBResponse<TVShow>> {
-   return fetchAPI<TMDBResponse<TVShow>>('/tv/popular', { params: { page } });
+export function fetchPopularTV(
+   page = 1,
+   contentType?: TVContentType,
+): Promise<TMDBResponse<TVShow>> {
+   return fetchAPI<TMDBResponse<TVShow>>('/tv/popular', {
+      params: { page, ...(contentType && { contentType }) },
+   });
 }
 
 /** Fetch airing today TV shows */
-export function fetchAiringTodayTV(page = 1): Promise<TMDBResponse<TVShow>> {
-   return fetchAPI<TMDBResponse<TVShow>>('/tv/airing-today', { params: { page } });
+export function fetchAiringTodayTV(
+   page = 1,
+   contentType?: TVContentType,
+): Promise<TMDBResponse<TVShow>> {
+   return fetchAPI<TMDBResponse<TVShow>>('/tv/airing-today', {
+      params: { page, ...(contentType && { contentType }) },
+   });
 }
 
 /** Fetch top rated TV shows */
-export function fetchTopRatedTV(page = 1): Promise<TMDBResponse<TVShow>> {
-   return fetchAPI<TMDBResponse<TVShow>>('/tv/top-rated', { params: { page } });
+export function fetchTopRatedTV(
+   page = 1,
+   contentType?: TVContentType,
+): Promise<TMDBResponse<TVShow>> {
+   return fetchAPI<TMDBResponse<TVShow>>('/tv/top-rated', {
+      params: { page, ...(contentType && { contentType }) },
+   });
 }
 
 /** Fetch on the air TV shows */
-export function fetchOnTheAirTV(page = 1): Promise<TMDBResponse<TVShow>> {
-   return fetchAPI<TMDBResponse<TVShow>>('/tv/on-the-air', { params: { page } });
+export function fetchOnTheAirTV(
+   page = 1,
+   contentType?: TVContentType,
+): Promise<TMDBResponse<TVShow>> {
+   return fetchAPI<TMDBResponse<TVShow>>('/tv/on-the-air', {
+      params: { page, ...(contentType && { contentType }) },
+   });
 }
 
 /** Fetch TV show detail by ID */
@@ -74,7 +106,11 @@ export function fetchTVByGenre(genreId: number, page = 1): Promise<TMDBResponse<
 }
 
 /** Discover TV shows with advanced filters */
-export function discoverTV(filters: DiscoverFilters, page = 1): Promise<TMDBResponse<TVShow>> {
+export function discoverTV(
+   filters: DiscoverFilters,
+   page = 1,
+   contentType?: TVContentType,
+): Promise<TMDBResponse<TVShow>> {
    return fetchAPI<TMDBResponse<TVShow>>('/tv/discover', {
       params: {
          page,
@@ -83,6 +119,7 @@ export function discoverTV(filters: DiscoverFilters, page = 1): Promise<TMDBResp
          sortBy: filters.sortBy,
          minRating: filters.minRating,
          maxRating: filters.maxRating,
+         ...(contentType && { contentType }),
       },
    });
 }

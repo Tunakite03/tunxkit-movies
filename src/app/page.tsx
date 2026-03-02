@@ -25,66 +25,83 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-   const [trending, popular, nowPlaying, topRated, upcoming, trendingTV, popularTV] = await Promise.all([
+   const [
+      trending,
+      popular,
+      nowPlaying,
+      topRated,
+      upcoming,
+      trendingDrama,
+      popularDrama,
+      trendingVariety,
+   ] = await Promise.all([
       fetchTrending(),
       fetchPopular(),
       fetchNowPlaying(),
       fetchTopRated(),
       fetchUpcoming(),
-      fetchTrendingTV(),
-      fetchPopularTV(),
+      fetchTrendingTV(1, 'drama'),
+      fetchPopularTV(1, 'drama'),
+      fetchTrendingTV(1, 'variety'),
    ]);
 
    const heroMovie = trending.results[0];
 
    return (
-      <div className='space-y-8 pb-8 md:space-y-12'>
+      <div className="space-y-8 pb-8 md:space-y-12">
          {/* Hero Banner */}
          {heroMovie && <HeroSection movie={heroMovie} />}
 
          {/* Movie Sections */}
-         <div className='container mx-auto space-y-8 px-4 md:space-y-12 md:px-6'>
+         <div className="container mx-auto space-y-8 px-4 md:space-y-12 md:px-6">
             <MovieCarousel
-               title='🔥 Xu hướng'
+               title="🔥 Xu hướng"
                movies={trending.results.slice(0, 15)}
-               href='/movies?category=popular'
+               href="/movies?category=popular"
             />
 
             <MovieCarousel
-               title='🎬 Đang chiếu'
+               title="🎬 Đang chiếu rạp"
                movies={nowPlaying.results.slice(0, 15)}
-               href='/movies?category=now_playing'
+               href="/cinema?category=now_playing"
             />
 
             <MovieCarousel
-               title='⭐ Đánh giá cao'
+               title="⭐ Đánh giá cao"
                movies={topRated.results.slice(0, 15)}
-               href='/movies?category=top_rated'
+               href="/movies?category=top_rated"
             />
 
             <MovieCarousel
-               title='🍿 Phổ biến'
+               title="🍿 Phổ biến"
                movies={popular.results.slice(0, 15)}
-               href='/movies?category=popular'
+               href="/movies?category=popular"
             />
 
             <MovieCarousel
-               title='📅 Sắp chiếu'
+               title="📅 Sắp chiếu"
                movies={upcoming.results.slice(0, 15)}
-               href='/movies?category=upcoming'
+               href="/cinema?category=upcoming"
             />
 
-            {/* TV Shows */}
+            {/* Drama TV Shows */}
             <MediaCarousel
-               title='📺 Phim bộ xu hướng'
-               items={trendingTV.results.slice(0, 15).map(tvShowToMediaItem)}
-               href='/tv'
+               title="📺 Phim bộ xu hướng"
+               items={trendingDrama.results.slice(0, 15).map(tvShowToMediaItem)}
+               href="/tv"
             />
 
             <MediaCarousel
-               title='🔥 Phim bộ phổ biến'
-               items={popularTV.results.slice(0, 15).map(tvShowToMediaItem)}
-               href='/tv?category=popular'
+               title="🔥 Phim bộ phổ biến"
+               items={popularDrama.results.slice(0, 15).map(tvShowToMediaItem)}
+               href="/tv?category=popular"
+            />
+
+            {/* TV Shows (Variety/Reality/Talk) */}
+            <MediaCarousel
+               title="🎭 TV Show xu hướng"
+               items={trendingVariety.results.slice(0, 15).map(tvShowToMediaItem)}
+               href="/tv-shows"
             />
          </div>
       </div>

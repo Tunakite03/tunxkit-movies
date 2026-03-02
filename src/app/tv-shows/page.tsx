@@ -7,13 +7,12 @@ import { Pagination } from '@/components/pagination';
 import { FilterBar } from '@/components/filter-bar';
 import { fetchTVByCategory, discoverTV } from '@/services';
 import { tvShowToMediaItem } from '@/lib/image-utils';
-import { DRAMA_CATEGORIES, DEFAULT_DRAMA_CATEGORY, SITE_URL } from '@/constants';
+import { TV_SHOW_CATEGORIES, DEFAULT_TV_SHOW_CATEGORY, SITE_URL } from '@/constants';
 import type { TVCategory, SortBy } from '@/types';
 
-// TMDB data changes frequently and requires a valid API key — skip static prerendering
 export const dynamic = 'force-dynamic';
 
-interface TVPageProps {
+interface TVShowsPageProps {
    readonly searchParams: Promise<{
       category?: string;
       page?: string;
@@ -23,9 +22,9 @@ interface TVPageProps {
    }>;
 }
 
-/** Validate category param against known drama categories */
+/** Validate category param against TV show categories */
 function isValidCategory(value: string | undefined): value is TVCategory {
-   return DRAMA_CATEGORIES.some((c) => c.value === value);
+   return TV_SHOW_CATEGORIES.some((c) => c.value === value);
 }
 
 function hasActiveFilters(params: { year?: string; sort?: string; rating?: string }): boolean {
@@ -34,20 +33,20 @@ function hasActiveFilters(params: { year?: string; sort?: string; rating?: strin
    );
 }
 
-export async function generateMetadata({ searchParams }: TVPageProps): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: TVShowsPageProps): Promise<Metadata> {
    const { category } = await searchParams;
-   const cat = isValidCategory(category) ? category : DEFAULT_DRAMA_CATEGORY;
-   const label = DRAMA_CATEGORIES.find((c) => c.value === cat)?.label ?? 'Phim bộ';
+   const cat = isValidCategory(category) ? category : DEFAULT_TV_SHOW_CATEGORY;
+   const label = TV_SHOW_CATEGORIES.find((c) => c.value === cat)?.label ?? 'TV Show';
    return {
-      title: `${label} - Phim bộ`,
-      description: `Danh sách phim bộ ${label.toLowerCase()} - Xem phim bộ mới nhất, phim bộ hay nhất.`,
-      alternates: { canonical: `${SITE_URL}/tv` },
+      title: `${label} - TV Show`,
+      description: `Danh sách TV Show ${label.toLowerCase()} - Chương trình thực tế, talkshow, gameshow hay nhất.`,
+      alternates: { canonical: `${SITE_URL}/tv-shows` },
    };
 }
 
-export default async function TVPage({ searchParams }: TVPageProps) {
+export default async function TVShowsPage({ searchParams }: TVShowsPageProps) {
    const params = await searchParams;
-   const category = isValidCategory(params.category) ? params.category : DEFAULT_DRAMA_CATEGORY;
+   const category = isValidCategory(params.category) ? params.category : DEFAULT_TV_SHOW_CATEGORY;
    const page = Math.max(1, Number(params.page) || 1);
 
    const useDiscover = hasActiveFilters(params);
@@ -60,9 +59,9 @@ export default async function TVPage({ searchParams }: TVPageProps) {
               minRating: params.rating ? Number(params.rating) : undefined,
            },
            page,
-           'drama',
+           'variety',
         )
-      : await fetchTVByCategory(category, page, 'drama');
+      : await fetchTVByCategory(category, page, 'variety');
 
    const items = data.results.map(tvShowToMediaItem);
 
@@ -73,18 +72,18 @@ export default async function TVPage({ searchParams }: TVPageProps) {
 
    return (
       <div className="container mx-auto space-y-6 px-4 py-8 md:px-6">
-         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Phim bộ</h1>
+         <h1 className="text-2xl font-bold tracking-tight md:text-3xl">TV Show</h1>
 
          {/* Category Tabs */}
          <div className="flex flex-wrap gap-2">
-            {DRAMA_CATEGORIES.map((cat) => (
+            {TV_SHOW_CATEGORIES.map((cat) => (
                <Button
                   key={cat.value}
                   variant={cat.value === category ? 'default' : 'outline'}
                   size="sm"
                   asChild
                >
-                  <Link href={`/tv?category=${cat.value}`} prefetch={false}>
+                  <Link href={`/tv-shows?category=${cat.value}`} prefetch={false}>
                      {cat.label}
                   </Link>
                </Button>
@@ -92,14 +91,14 @@ export default async function TVPage({ searchParams }: TVPageProps) {
          </div>
 
          {/* Advanced Filters */}
-         <FilterBar baseUrl="/tv" preserveParams={{ category }} />
+         <FilterBar baseUrl="/tv-shows" preserveParams={{ category }} />
 
-         <MediaGrid items={items} emptyMessage="Không tìm thấy phim bộ nào." />
+         <MediaGrid items={items} emptyMessage="Không tìm thấy TV Show nào." />
 
          <Pagination
             currentPage={page}
             totalPages={data.total_pages}
-            baseUrl="/tv"
+            baseUrl="/tv-shows"
             searchParams={filterSearchParams}
          />
       </div>
