@@ -227,7 +227,7 @@ export default async function TVDetailPage({ params }: TVDetailPageProps) {
             {/* Seasons */}
             {show.seasons.length > 0 && (
                <section>
-                  <h2 className='mb-4 text-xl font-bold tracking-tight md:text-2xl'>📺 Danh sách mùa</h2>
+                  <h2 className='mb-4 text-xl font-bold tracking-tight md:text-2xl'>Danh sách mùa</h2>
                   <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 md:gap-4'>
                      {show.seasons
                         .filter((s) => s.season_number > 0)
@@ -276,7 +276,7 @@ export default async function TVDetailPage({ params }: TVDetailPageProps) {
             {/* Cast */}
             {topCast.length > 0 && (
                <section>
-                  <h2 className='mb-4 text-xl font-bold tracking-tight md:text-2xl'>🎭 Diễn viên</h2>
+                  <h2 className='mb-4 text-xl font-bold tracking-tight md:text-2xl'> Diễn viên</h2>
                   <div className='flex gap-4 overflow-x-auto pb-4 md:gap-6'>
                      {topCast.map((member) => (
                         <div

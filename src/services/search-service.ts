@@ -18,12 +18,12 @@ export function searchMulti(query: string, page = 1): Promise<TMDBResponse<Movie
 
 /** Fetch all movie genres */
 export async function fetchGenres(): Promise<readonly Genre[]> {
-   const data = await fetchAPI<{ genres: Genre[] }>('/genres/movies');
-   return data.genres;
+   const data = await fetchAPI<Genre[]>('/genres/movies');
+   return data;
 }
 
 /** Fetch all TV show genres */
 export async function fetchTVGenres(): Promise<readonly Genre[]> {
-   const data = await fetchAPI<{ genres: Genre[] }>('/genres/tv');
-   return data.genres;
+   const data = await fetchAPI<Genre[]>('/genres/tv');
+   return data;
 }

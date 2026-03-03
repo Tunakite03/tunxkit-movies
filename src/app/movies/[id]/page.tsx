@@ -242,7 +242,7 @@ export default async function MovieDetailPage({ params }: MovieDetailPageProps) 
             {/* Cast */}
             {topCast.length > 0 && (
                <section>
-                  <h2 className='mb-4 text-xl font-bold tracking-tight md:text-2xl'>🎭 Diễn viên</h2>
+                  <h2 className='mb-4 text-xl font-bold tracking-tight md:text-2xl'> Diễn viên</h2>
                   <div className='flex gap-4 overflow-x-auto pb-4 md:gap-6'>
                      {topCast.map((member) => (
                         <div

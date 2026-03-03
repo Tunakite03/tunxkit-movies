@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { HeroSection } from '@/components/hero-section';
+import { HeroCarousel } from '@/components/hero-carousel';
 import { MovieCarousel } from '@/components/movie-carousel';
 import { MediaCarousel } from '@/components/media-carousel';
 import {
@@ -45,61 +45,59 @@ export default async function HomePage() {
       fetchTrendingTV(1, 'variety'),
    ]);
 
-   const heroMovie = trending.results[0];
-
    return (
       <div className="space-y-8 pb-8 md:space-y-12">
-         {/* Hero Banner */}
-         {heroMovie && <HeroSection movie={heroMovie} />}
+         {/* Hero Carousel - Hot Movies */}
+         <HeroCarousel movies={trending.results.slice(0, 6)} />
 
          {/* Movie Sections */}
          <div className="container mx-auto space-y-8 px-4 md:space-y-12 md:px-6">
             <MovieCarousel
-               title="🔥 Xu hướng"
+               title="Xu hướng"
                movies={trending.results.slice(0, 15)}
                href="/movies?category=popular"
             />
 
             <MovieCarousel
-               title="🎬 Đang chiếu rạp"
+               title="Đang chiếu rạp"
                movies={nowPlaying.results.slice(0, 15)}
                href="/cinema?category=now_playing"
             />
 
             <MovieCarousel
-               title="⭐ Đánh giá cao"
+               title="Đánh giá cao"
                movies={topRated.results.slice(0, 15)}
                href="/movies?category=top_rated"
             />
 
             <MovieCarousel
-               title="🍿 Phổ biến"
+               title="Phổ biến"
                movies={popular.results.slice(0, 15)}
                href="/movies?category=popular"
             />
 
             <MovieCarousel
-               title="📅 Sắp chiếu"
+               title="Sắp chiếu"
                movies={upcoming.results.slice(0, 15)}
                href="/cinema?category=upcoming"
             />
 
             {/* Drama TV Shows */}
             <MediaCarousel
-               title="📺 Phim bộ xu hướng"
+               title="Phim bộ xu hướng"
                items={trendingDrama.results.slice(0, 15).map(tvShowToMediaItem)}
                href="/tv"
             />
 
             <MediaCarousel
-               title="🔥 Phim bộ phổ biến"
+               title="Phim bộ phổ biến"
                items={popularDrama.results.slice(0, 15).map(tvShowToMediaItem)}
                href="/tv?category=popular"
             />
 
             {/* TV Shows (Variety/Reality/Talk) */}
             <MediaCarousel
-               title="🎭 TV Show xu hướng"
+               title=" TV Show xu hướng"
                items={trendingVariety.results.slice(0, 15).map(tvShowToMediaItem)}
                href="/tv-shows"
             />

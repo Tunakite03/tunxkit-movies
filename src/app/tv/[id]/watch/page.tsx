@@ -173,7 +173,7 @@ export default async function TVWatchPage({ params }: WatchPageProps) {
 
          {/* Watch Providers */}
          <section className='space-y-4'>
-            <h2 className='text-xl font-bold tracking-tight md:text-2xl'>📺 Nơi xem phim</h2>
+            <h2 className='text-xl font-bold tracking-tight md:text-2xl'>Nơi xem phim</h2>
             <WatchProviderList providers={regionProviders} />
          </section>
 

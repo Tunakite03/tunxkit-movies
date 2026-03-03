@@ -75,7 +75,7 @@ export function MediaCarousel({ items, title, href }: MediaCarouselProps) {
             {canScrollLeft && (
                <div className='pointer-events-none absolute inset-y-0 left-0 z-10 flex w-20 items-center bg-linear-to-r from-background to-transparent'>
                   <Button
-                     variant='secondary'
+                     variant='default'
                      size='icon'
                      onClick={handleScrollLeft}
                      className='pointer-events-auto ml-1 size-8 rounded-full shadow-md'
@@ -101,7 +101,7 @@ export function MediaCarousel({ items, title, href }: MediaCarouselProps) {
             {canScrollRight && (
                <div className='pointer-events-none absolute inset-y-0 right-0 z-10 flex w-20 items-center justify-end bg-linear-to-l from-background to-transparent'>
                   <Button
-                     variant='secondary'
+                     variant='default'
                      size='icon'
                      onClick={handleScrollRight}
                      className='pointer-events-auto mr-1 size-8 rounded-full shadow-md'
