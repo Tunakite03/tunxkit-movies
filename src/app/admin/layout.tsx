@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -16,14 +16,17 @@ import {
    Menu,
    X,
    ChevronLeft,
+   PlayCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth-store';
+import { Separator } from '@/components/ui/separator';
 
 const ADMIN_NAV = [
    { href: '/admin', label: 'Tổng quan', icon: LayoutDashboard },
    { href: '/admin/movies', label: 'Phim lẻ', icon: Film },
    { href: '/admin/tv-shows', label: 'Phim bộ', icon: Tv },
+   { href: '/admin/video-sources', label: 'Nguồn phát', icon: PlayCircle },
    { href: '/admin/users', label: 'Người dùng', icon: Users },
    { href: '/admin/people', label: 'Diễn viên', icon: UserCircle },
    { href: '/admin/genres', label: 'Thể loại', icon: Tag },
@@ -36,21 +39,34 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
    const pathname = usePathname();
    const [isChecking, setIsChecking] = useState(true);
    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+   const [, startTransition] = useTransition();
 
-   useEffect(() => {
+   const handleAuthCheck = useCallback(() => {
       if (!isHydrated) return;
 
       if (!isAuthenticated || user?.role !== 'ADMIN') {
          router.replace('/');
       } else {
-         setIsChecking(false);
+         startTransition(() => {
+            setIsChecking(false);
+         });
       }
    }, [isAuthenticated, isHydrated, user, router]);
 
+   useEffect(() => {
+      handleAuthCheck();
+   }, [handleAuthCheck]);
+
+   const handleRouteChange = useCallback(() => {
+      startTransition(() => {
+         setIsSidebarOpen(false);
+      });
+   }, []);
+
    // Close mobile sidebar on route change
    useEffect(() => {
-      setIsSidebarOpen(false);
-   }, [pathname]);
+      handleRouteChange();
+   }, [pathname, handleRouteChange]);
 
    if (!isHydrated || isChecking) {
       return (
@@ -62,7 +78,7 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
    }
 
    return (
-      <div className="flex min-h-[calc(100vh-64px)]">
+      <div className="flex min-h-screen">
          {/* Mobile sidebar overlay */}
          {isSidebarOpen && (
             <div
@@ -83,8 +99,14 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
          >
             <div className="flex items-center justify-between border-b border-border p-4">
                <div className="flex items-center gap-2">
-                  <ShieldAlert className="h-5 w-5 text-primary" />
-                  <span className="text-lg font-bold tracking-tight text-foreground">Admin</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                     <ShieldAlert className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                     <span className="text-sm font-bold tracking-tight text-foreground">
+                        Admin Panel
+                     </span>
+                  </div>
                </div>
                <Button
                   variant="ghost"
@@ -97,7 +119,7 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
                </Button>
             </div>
 
-            <nav className="flex-1 space-y-1 p-3">
+            <nav className="flex-1 space-y-1 overflow-y-auto p-3">
                {ADMIN_NAV.map((item) => {
                   const isActive =
                      item.href === '/admin'
@@ -123,6 +145,23 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
             </nav>
 
             <div className="border-t border-border p-3">
+               {/* User info */}
+               {user && (
+                  <>
+                     <div className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                           {user.name?.charAt(0).toUpperCase() ?? 'A'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                           <p className="truncate text-sm font-medium text-foreground">
+                              {user.name ?? 'Admin'}
+                           </p>
+                           <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                        </div>
+                     </div>
+                     <Separator className="mb-2" />
+                  </>
+               )}
                <Link
                   href="/"
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"

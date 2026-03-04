@@ -2,10 +2,15 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Tv, Trash2, ExternalLink } from 'lucide-react';
+import { Tv, Trash2, ExternalLink, Eye } from 'lucide-react';
 import Link from 'next/link';
 
-import { getAdminTVShows, deleteAdminTVShow } from '@/services/admin-dashboard-service';
+import {
+   getAdminTVShows,
+   deleteAdminTVShow,
+   createAdminTVShow,
+} from '@/services/admin-dashboard-service';
+import type { CreateTVShowData } from '@/services/admin-dashboard-service';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,13 +24,14 @@ import {
 } from '@/components/ui/table';
 import { AdminSearchBar, AdminPagination, AdminPageHeader } from '@/components/admin/admin-shared';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import { CreateTVShowDialog } from '@/components/admin/create-tvshow-dialog';
+import { useAdminSearchParams } from '@/hooks';
 
 export default function AdminTVShowsPage() {
    const { token } = useAuthStore();
    const queryClient = useQueryClient();
 
-   const [page, setPage] = useState(1);
-   const [search, setSearch] = useState('');
+   const { page, search, setPage, setSearch } = useAdminSearchParams();
    const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
 
    const { data, isLoading } = useQuery({
@@ -43,10 +49,20 @@ export default function AdminTVShowsPage() {
       },
    });
 
-   const handleSearch = useCallback((query: string) => {
-      setSearch(query);
-      setPage(1);
-   }, []);
+   const createMutation = useMutation({
+      mutationFn: (data: CreateTVShowData) => createAdminTVShow(data, token as string),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['admin-tv-shows'] });
+         queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      },
+   });
+
+   const handleSearch = useCallback(
+      (query: string) => {
+         setSearch(query);
+      },
+      [setSearch],
+   );
 
    return (
       <div className="space-y-6">
@@ -54,10 +70,18 @@ export default function AdminTVShowsPage() {
             title="Quản lý Phim bộ"
             description="Xem, tìm kiếm và quản lý danh sách TV shows"
             icon={<Tv className="h-6 w-6 text-purple-500" />}
+            actions={
+               <CreateTVShowDialog
+                  onSubmit={(data) => createMutation.mutate(data)}
+                  isPending={createMutation.isPending}
+                  isSuccess={createMutation.isSuccess}
+               />
+            }
          />
 
          <AdminSearchBar
             placeholder="Tìm kiếm phim bộ..."
+            initialQuery={search}
             onSearch={handleSearch}
             isLoading={isLoading}
          />
@@ -112,6 +136,11 @@ export default function AdminTVShowsPage() {
                            </TableCell>
                            <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
+                                 <Button variant="ghost" size="icon-xs" asChild>
+                                    <Link href={`/admin/tv-shows/${show.id}`}>
+                                       <Eye className="h-3 w-3" />
+                                    </Link>
+                                 </Button>
                                  <Button variant="ghost" size="icon-xs" asChild>
                                     <Link href={`/tv/${show.id}`} target="_blank">
                                        <ExternalLink className="h-3 w-3" />

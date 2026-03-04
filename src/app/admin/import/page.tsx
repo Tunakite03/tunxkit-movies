@@ -73,7 +73,7 @@ export default function AdminPage() {
          // Refetch stats immediately
          queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
       },
-      onError: (err: any) => {
+      onError: (err: Error) => {
          showNotification(err?.message || 'Có lỗi xảy ra', 'error');
       },
    };

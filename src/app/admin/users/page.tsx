@@ -18,13 +18,13 @@ import {
 } from '@/components/ui/table';
 import { AdminSearchBar, AdminPagination, AdminPageHeader } from '@/components/admin/admin-shared';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import { useAdminSearchParams } from '@/hooks';
 
 export default function AdminUsersPage() {
    const { token, user: currentUser } = useAuthStore();
    const queryClient = useQueryClient();
 
-   const [page, setPage] = useState(1);
-   const [search, setSearch] = useState('');
+   const { page, search, setPage, setSearch } = useAdminSearchParams();
    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
    const [roleTarget, setRoleTarget] = useState<{
       id: string;
@@ -56,10 +56,12 @@ export default function AdminUsersPage() {
       },
    });
 
-   const handleSearch = useCallback((query: string) => {
-      setSearch(query);
-      setPage(1);
-   }, []);
+   const handleSearch = useCallback(
+      (query: string) => {
+         setSearch(query);
+      },
+      [setSearch],
+   );
 
    const formatDate = (dateStr: string) => {
       try {
@@ -79,6 +81,7 @@ export default function AdminUsersPage() {
 
          <AdminSearchBar
             placeholder="Tìm theo tên hoặc email..."
+            initialQuery={search}
             onSearch={handleSearch}
             isLoading={isLoading}
          />

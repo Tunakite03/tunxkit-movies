@@ -3,6 +3,17 @@ import type { TMDBResponse } from '@/types';
 
 // ─── Dashboard Stats ────────────────────────────────────────
 
+export interface StatusCount {
+   readonly status: string;
+   readonly _count: number;
+}
+
+export interface GenrePopularity {
+   readonly id: number;
+   readonly name: string;
+   readonly count: number;
+}
+
 export interface DashboardStats {
    readonly users: number;
    readonly movies: number;
@@ -14,6 +25,13 @@ export interface DashboardStats {
    readonly watchlistItems: number;
    readonly recentUsers: readonly AdminUser[];
    readonly recentMovies: readonly AdminMovieItem[];
+   readonly recentTVShows: readonly AdminTVShowItem[];
+   readonly topRatedMovies: readonly AdminMovieItem[];
+   readonly topRatedTVShows: readonly AdminTVShowItem[];
+   readonly moviesByStatus: readonly StatusCount[];
+   readonly tvShowsByStatus: readonly StatusCount[];
+   readonly popularMovieGenres: readonly GenrePopularity[];
+   readonly popularTVGenres: readonly GenrePopularity[];
 }
 
 // ─── Admin User ─────────────────────────────────────────────
@@ -94,6 +112,213 @@ export interface AdminGenresResponse {
    readonly tvGenres: readonly AdminGenreItem[];
 }
 
+// ─── Admin Movie Detail ─────────────────────────────────────
+
+export interface AdminMovieDetailCast {
+   readonly id: string;
+   readonly character: string;
+   readonly castOrder: number;
+   readonly person: {
+      readonly id: number;
+      readonly name: string;
+      readonly profilePath: string | null;
+   };
+}
+
+export interface AdminVideoItem {
+   readonly id: string;
+   readonly key: string;
+   readonly name: string;
+   readonly site: string;
+   readonly type: string;
+   readonly official: boolean;
+}
+
+export interface AdminMovieDetail {
+   readonly id: number;
+   readonly title: string;
+   readonly originalTitle: string;
+   readonly tagline: string;
+   readonly overview: string;
+   readonly posterPath: string | null;
+   readonly backdropPath: string | null;
+   readonly releaseDate: string;
+   readonly voteAverage: number;
+   readonly voteCount: number;
+   readonly popularity: number;
+   readonly adult: boolean;
+   readonly runtime: number;
+   readonly status: string;
+   readonly budget: number;
+   readonly revenue: number;
+   readonly genres: readonly { genre: { id: number; name: string } }[];
+   readonly cast: readonly AdminMovieDetailCast[];
+   readonly videos: readonly AdminVideoItem[];
+}
+
+// ─── Admin TV Show Detail ───────────────────────────────────
+
+export interface AdminTVShowDetailCast {
+   readonly id: string;
+   readonly character: string;
+   readonly castOrder: number;
+   readonly person: {
+      readonly id: number;
+      readonly name: string;
+      readonly profilePath: string | null;
+   };
+}
+
+export interface AdminSeasonItem {
+   readonly id: number;
+   readonly seasonNumber: number;
+   readonly name: string;
+   readonly episodeCount: number;
+   readonly airDate: string | null;
+}
+
+export interface AdminTVShowDetail {
+   readonly id: number;
+   readonly name: string;
+   readonly originalName: string;
+   readonly tagline: string;
+   readonly overview: string;
+   readonly posterPath: string | null;
+   readonly backdropPath: string | null;
+   readonly firstAirDate: string;
+   readonly lastAirDate: string;
+   readonly voteAverage: number;
+   readonly voteCount: number;
+   readonly popularity: number;
+   readonly adult: boolean;
+   readonly numberOfSeasons: number;
+   readonly numberOfEpisodes: number;
+   readonly status: string;
+   readonly genres: readonly { genre: { id: number; name: string } }[];
+   readonly cast: readonly AdminTVShowDetailCast[];
+   readonly videos: readonly AdminVideoItem[];
+   readonly seasons: readonly AdminSeasonItem[];
+}
+
+// ─── Update DTOs ────────────────────────────────────────────
+
+export interface UpdateMovieData {
+   readonly title?: string;
+   readonly overview?: string;
+   readonly tagline?: string;
+   readonly status?: string;
+   readonly releaseDate?: string;
+   readonly voteAverage?: number;
+   readonly runtime?: number;
+   readonly adult?: boolean;
+}
+
+export interface UpdateTVShowData {
+   readonly name?: string;
+   readonly overview?: string;
+   readonly tagline?: string;
+   readonly status?: string;
+   readonly firstAirDate?: string;
+   readonly voteAverage?: number;
+   readonly numberOfSeasons?: number;
+   readonly numberOfEpisodes?: number;
+}
+
+// ─── Create Data Types ──────────────────────────────────────
+
+export interface CreateMovieData {
+   readonly id: number;
+   readonly title: string;
+   readonly originalTitle?: string;
+   readonly tagline?: string;
+   readonly overview?: string;
+   readonly posterPath?: string;
+   readonly backdropPath?: string;
+   readonly releaseDate?: string;
+   readonly voteAverage?: number;
+   readonly runtime?: number;
+   readonly status?: string;
+   readonly adult?: boolean;
+   readonly genreIds?: readonly number[];
+}
+
+export interface CreateTVShowData {
+   readonly id: number;
+   readonly name: string;
+   readonly originalName?: string;
+   readonly tagline?: string;
+   readonly overview?: string;
+   readonly posterPath?: string;
+   readonly backdropPath?: string;
+   readonly firstAirDate?: string;
+   readonly voteAverage?: number;
+   readonly numberOfSeasons?: number;
+   readonly numberOfEpisodes?: number;
+   readonly status?: string;
+   readonly genreIds?: readonly number[];
+}
+
+export interface CreateGenreData {
+   readonly id: number;
+   readonly name: string;
+   readonly type: 'movie' | 'tv';
+}
+
+export interface UpdateGenreData {
+   readonly name?: string;
+}
+
+export interface CreatePersonData {
+   readonly id: number;
+   readonly name: string;
+   readonly biography?: string;
+   readonly birthday?: string;
+   readonly deathday?: string;
+   readonly placeOfBirth?: string;
+   readonly profilePath?: string;
+   readonly knownForDepartment?: string;
+   readonly gender?: number;
+}
+
+export interface UpdatePersonData {
+   readonly name?: string;
+   readonly biography?: string;
+   readonly birthday?: string;
+   readonly deathday?: string;
+   readonly placeOfBirth?: string;
+   readonly profilePath?: string;
+   readonly knownForDepartment?: string;
+   readonly gender?: number;
+}
+
+export interface CreateVideoData {
+   readonly key: string;
+   readonly name: string;
+   readonly site?: string;
+   readonly type?: string;
+   readonly official?: boolean;
+}
+
+export interface AdminPersonDetail {
+   readonly id: number;
+   readonly name: string;
+   readonly biography: string;
+   readonly birthday: string | null;
+   readonly deathday: string | null;
+   readonly placeOfBirth: string | null;
+   readonly profilePath: string | null;
+   readonly knownForDepartment: string;
+   readonly gender: number;
+   readonly popularity: number;
+   readonly homepage: string | null;
+   readonly imdbId: string | null;
+   readonly alsoKnownAs: readonly string[];
+   readonly _count: {
+      readonly movieCast: number;
+      readonly tvCast: number;
+   };
+}
+
 // ─── Import (existing) ─────────────────────────────────────
 
 export interface AdminStats {
@@ -167,6 +392,18 @@ export function getAdminMovies(
    });
 }
 
+/** Create a movie manually */
+export function createAdminMovie(
+   data: CreateMovieData,
+   token: string,
+): Promise<{ message: string; id: number }> {
+   return fetchAPI<{ message: string; id: number }>('/admin/movies', {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
 /** Delete a movie */
 export function deleteAdminMovie(movieId: number, token: string): Promise<{ message: string }> {
    return fetchAPI<{ message: string }>(`/admin/movies/${movieId}`, {
@@ -185,6 +422,18 @@ export function getAdminTVShows(
       token,
       params: { page, search },
       cache: 'no-store',
+   });
+}
+
+/** Create a TV show manually */
+export function createAdminTVShow(
+   data: CreateTVShowData,
+   token: string,
+): Promise<{ message: string; id: number }> {
+   return fetchAPI<{ message: string; id: number }>('/admin/tv-shows', {
+      method: 'POST',
+      body: data,
+      token,
    });
 }
 
@@ -212,6 +461,163 @@ export function getAdminPeople(
 /** List all genres */
 export function getAdminGenres(token: string): Promise<AdminGenresResponse> {
    return fetchAPI<AdminGenresResponse>('/admin/genres', { token, cache: 'no-store' });
+}
+
+/** Create a genre manually */
+export function createAdminGenre(
+   data: CreateGenreData,
+   token: string,
+): Promise<{ message: string; id: number }> {
+   return fetchAPI<{ message: string; id: number }>('/admin/genres', {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
+/** Update a genre */
+export function updateAdminGenre(
+   genreId: number,
+   data: UpdateGenreData,
+   token: string,
+): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/genres/${genreId}`, {
+      method: 'PATCH',
+      body: data,
+      token,
+   });
+}
+
+/** Delete a genre */
+export function deleteAdminGenre(genreId: number, token: string): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/genres/${genreId}`, {
+      method: 'DELETE',
+      token,
+   });
+}
+
+// ─── Movie Detail & Update ──────────────────────────────────
+
+/** Get movie detail for admin */
+export function getAdminMovieDetail(movieId: number, token: string): Promise<AdminMovieDetail> {
+   return fetchAPI<AdminMovieDetail>(`/admin/movies/${movieId}`, { token, cache: 'no-store' });
+}
+
+/** Update a movie */
+export function updateAdminMovie(
+   movieId: number,
+   data: UpdateMovieData,
+   token: string,
+): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/movies/${movieId}`, {
+      method: 'PATCH',
+      body: data,
+      token,
+   });
+}
+
+// ─── TV Show Detail & Update ────────────────────────────────
+
+/** Get TV show detail for admin */
+export function getAdminTVShowDetail(tvShowId: number, token: string): Promise<AdminTVShowDetail> {
+   return fetchAPI<AdminTVShowDetail>(`/admin/tv-shows/${tvShowId}`, { token, cache: 'no-store' });
+}
+
+/** Update a TV show */
+export function updateAdminTVShow(
+   tvShowId: number,
+   data: UpdateTVShowData,
+   token: string,
+): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/tv-shows/${tvShowId}`, {
+      method: 'PATCH',
+      body: data,
+      token,
+   });
+}
+
+// ─── Video Management ───────────────────────────────────────
+
+/** Delete a movie video */
+export function deleteAdminVideo(videoId: string, token: string): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/videos/${videoId}`, {
+      method: 'DELETE',
+      token,
+   });
+}
+
+/** Add a video to a movie */
+export function createAdminMovieVideo(
+   movieId: number,
+   data: CreateVideoData,
+   token: string,
+): Promise<{ message: string; id: string }> {
+   return fetchAPI<{ message: string; id: string }>(`/admin/movies/${movieId}/videos`, {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
+/** Add a video to a TV show */
+export function createAdminTVShowVideo(
+   tvShowId: number,
+   data: CreateVideoData,
+   token: string,
+): Promise<{ message: string; id: string }> {
+   return fetchAPI<{ message: string; id: string }>(`/admin/tv-shows/${tvShowId}/videos`, {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
+/** Delete a TV video */
+export function deleteAdminTVVideo(videoId: string, token: string): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/tv-videos/${videoId}`, {
+      method: 'DELETE',
+      token,
+   });
+}
+
+// ─── People Management ─────────────────────────────────────
+
+/** Create a person manually */
+export function createAdminPerson(
+   data: CreatePersonData,
+   token: string,
+): Promise<{ message: string; id: number }> {
+   return fetchAPI<{ message: string; id: number }>('/admin/people', {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
+/** Get person detail for admin */
+export function getAdminPersonDetail(personId: number, token: string): Promise<AdminPersonDetail> {
+   return fetchAPI<AdminPersonDetail>(`/admin/people/${personId}`, { token, cache: 'no-store' });
+}
+
+/** Update a person */
+export function updateAdminPerson(
+   personId: number,
+   data: UpdatePersonData,
+   token: string,
+): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/people/${personId}`, {
+      method: 'PATCH',
+      body: data,
+      token,
+   });
+}
+
+/** Delete a person */
+export function deleteAdminPerson(personId: number, token: string): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/people/${personId}`, {
+      method: 'DELETE',
+      token,
+   });
 }
 
 // ─── Import functions (moved from old admin-service) ────────
@@ -250,6 +656,176 @@ export function importMovie(tmdbId: number, token: string): Promise<ImportRespon
 export function importTV(tmdbId: number, token: string): Promise<ImportResponse> {
    return fetchAPI<ImportResponse>(`/import/tv/${tmdbId}`, {
       method: 'POST',
+      token,
+   });
+}
+
+// ─── Cast Management ────────────────────────────────────────
+
+export interface AddCastData {
+   readonly personId: number;
+   readonly character?: string;
+   readonly castOrder?: number;
+}
+
+export interface PersonSearchResult {
+   readonly id: number;
+   readonly name: string;
+   readonly profilePath: string | null;
+}
+
+/** Search people for cast auto-complete */
+export function searchAdminPeople(
+   query: string,
+   token: string,
+): Promise<readonly PersonSearchResult[]> {
+   return fetchAPI<readonly PersonSearchResult[]>('/admin/people/search', {
+      token,
+      params: { q: query },
+      cache: 'no-store',
+   });
+}
+
+/** Add a cast member to a movie */
+export function addAdminMovieCast(
+   movieId: number,
+   data: AddCastData,
+   token: string,
+): Promise<{ message: string; id: string }> {
+   return fetchAPI<{ message: string; id: string }>(`/admin/movies/${movieId}/cast`, {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
+/** Remove a cast member from a movie */
+export function removeAdminMovieCast(castId: string, token: string): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/movie-cast/${castId}`, {
+      method: 'DELETE',
+      token,
+   });
+}
+
+/** Add a cast member to a TV show */
+export function addAdminTVShowCast(
+   tvShowId: number,
+   data: AddCastData,
+   token: string,
+): Promise<{ message: string; id: string }> {
+   return fetchAPI<{ message: string; id: string }>(`/admin/tv-shows/${tvShowId}/cast`, {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
+/** Remove a cast member from a TV show */
+export function removeAdminTVShowCast(castId: string, token: string): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/tv-cast/${castId}`, {
+      method: 'DELETE',
+      token,
+   });
+}
+
+// ─── Video Sources ──────────────────────────────────────────
+
+/** Admin video source item */
+export interface AdminVideoSource {
+   readonly id: string;
+   readonly mediaType: 'movie' | 'tv';
+   readonly mediaId: number;
+   readonly season: number;
+   readonly episode: number;
+   readonly sourceType: 'hls' | 'embed' | 'direct';
+   readonly sourceUrl: string;
+   readonly label: string;
+   readonly quality: string;
+   readonly language: string;
+   readonly priority: number;
+   readonly isActive: boolean;
+   readonly createdAt: string;
+   readonly updatedAt: string;
+}
+
+/** Data required to create a video source */
+export interface CreateVideoSourceData {
+   readonly mediaType: 'movie' | 'tv';
+   readonly mediaId: number;
+   readonly season?: number;
+   readonly episode?: number;
+   readonly sourceType: 'hls' | 'embed' | 'direct';
+   readonly sourceUrl: string;
+   readonly label?: string;
+   readonly quality?: string;
+   readonly language?: string;
+   readonly priority?: number;
+}
+
+/** Data for updating a video source */
+export interface UpdateVideoSourceData {
+   readonly sourceType?: 'hls' | 'embed' | 'direct';
+   readonly sourceUrl?: string;
+   readonly label?: string;
+   readonly quality?: string;
+   readonly language?: string;
+   readonly priority?: number;
+   readonly isActive?: boolean;
+}
+
+/** List video sources for a media item */
+export function getAdminVideoSources(
+   mediaType: 'movie' | 'tv',
+   mediaId: number,
+   token: string,
+   season?: number,
+   episode?: number,
+): Promise<{ sources: readonly AdminVideoSource[]; total: number }> {
+   const params: Record<string, string | number> = { mediaType, mediaId };
+   if (season !== undefined) params['season'] = season;
+   if (episode !== undefined) params['episode'] = episode;
+
+   return fetchAPI<{ sources: readonly AdminVideoSource[]; total: number }>(
+      '/admin/video-sources',
+      {
+         params,
+         token,
+      },
+   );
+}
+
+/** Create a video source */
+export function createAdminVideoSource(
+   data: CreateVideoSourceData,
+   token: string,
+): Promise<{ message: string; id: string }> {
+   return fetchAPI<{ message: string; id: string }>('/admin/video-sources', {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
+/** Update a video source */
+export function updateAdminVideoSource(
+   sourceId: string,
+   data: UpdateVideoSourceData,
+   token: string,
+): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/video-sources/${sourceId}`, {
+      method: 'PATCH',
+      body: data,
+      token,
+   });
+}
+
+/** Delete a video source */
+export function deleteAdminVideoSource(
+   sourceId: string,
+   token: string,
+): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/video-sources/${sourceId}`, {
+      method: 'DELETE',
       token,
    });
 }

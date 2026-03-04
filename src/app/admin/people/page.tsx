@@ -1,11 +1,16 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { UserCircle, ExternalLink } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { UserCircle, ExternalLink, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
-import { getAdminPeople } from '@/services/admin-dashboard-service';
+import {
+   getAdminPeople,
+   deleteAdminPerson,
+   createAdminPerson,
+} from '@/services/admin-dashboard-service';
+import type { CreatePersonData } from '@/services/admin-dashboard-service';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,12 +23,16 @@ import {
    TableRow,
 } from '@/components/ui/table';
 import { AdminSearchBar, AdminPagination, AdminPageHeader } from '@/components/admin/admin-shared';
+import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import { CreatePersonDialog } from '@/components/admin/create-person-dialog';
+import { useAdminSearchParams } from '@/hooks';
 
 export default function AdminPeoplePage() {
    const { token } = useAuthStore();
+   const queryClient = useQueryClient();
 
-   const [page, setPage] = useState(1);
-   const [search, setSearch] = useState('');
+   const { page, search, setPage, setSearch } = useAdminSearchParams();
+   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
 
    const { data, isLoading } = useQuery({
       queryKey: ['admin-people', page, search],
@@ -31,10 +40,29 @@ export default function AdminPeoplePage() {
       enabled: !!token,
    });
 
-   const handleSearch = useCallback((query: string) => {
-      setSearch(query);
-      setPage(1);
-   }, []);
+   const deleteMutation = useMutation({
+      mutationFn: (personId: number) => deleteAdminPerson(personId, token as string),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['admin-people'] });
+         queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+         setDeleteTarget(null);
+      },
+   });
+
+   const createMutation = useMutation({
+      mutationFn: (data: CreatePersonData) => createAdminPerson(data, token as string),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['admin-people'] });
+         queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      },
+   });
+
+   const handleSearch = useCallback(
+      (query: string) => {
+         setSearch(query);
+      },
+      [setSearch],
+   );
 
    return (
       <div className="space-y-6">
@@ -42,10 +70,18 @@ export default function AdminPeoplePage() {
             title="Quản lý Diễn viên"
             description="Xem và tìm kiếm danh sách diễn viên"
             icon={<UserCircle className="h-6 w-6 text-cyan-500" />}
+            actions={
+               <CreatePersonDialog
+                  onSubmit={(data) => createMutation.mutate(data)}
+                  isPending={createMutation.isPending}
+                  isSuccess={createMutation.isSuccess}
+               />
+            }
          />
 
          <AdminSearchBar
             placeholder="Tìm kiếm diễn viên..."
+            initialQuery={search}
             onSearch={handleSearch}
             isLoading={isLoading}
          />
@@ -60,7 +96,7 @@ export default function AdminPeoplePage() {
                      <TableHead className="hidden md:table-cell">Độ phổ biến</TableHead>
                      <TableHead className="hidden lg:table-cell">Phim lẻ</TableHead>
                      <TableHead className="hidden lg:table-cell">Phim bộ</TableHead>
-                     <TableHead className="w-16 text-right">Xem</TableHead>
+                     <TableHead className="w-24 text-right">Thao tác</TableHead>
                   </TableRow>
                </TableHeader>
                <TableBody>
@@ -96,11 +132,23 @@ export default function AdminPeoplePage() {
                               {person._count.tvCast}
                            </TableCell>
                            <TableCell className="text-right">
-                              <Button variant="ghost" size="icon-xs" asChild>
-                                 <Link href={`/people/${person.id}`} target="_blank">
-                                    <ExternalLink className="h-3 w-3" />
-                                 </Link>
-                              </Button>
+                              <div className="flex items-center justify-end gap-1">
+                                 <Button variant="ghost" size="icon-xs" asChild>
+                                    <Link href={`/people/${person.id}`} target="_blank">
+                                       <ExternalLink className="h-3 w-3" />
+                                    </Link>
+                                 </Button>
+                                 <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={() =>
+                                       setDeleteTarget({ id: person.id, name: person.name })
+                                    }
+                                    className="text-destructive hover:text-destructive"
+                                 >
+                                    <Trash2 className="h-3 w-3" />
+                                 </Button>
+                              </div>
                            </TableCell>
                         </TableRow>
                      ))
@@ -126,6 +174,15 @@ export default function AdminPeoplePage() {
                isLoading={isLoading}
             />
          )}
+
+         <ConfirmDialog
+            isOpen={!!deleteTarget}
+            onClose={() => setDeleteTarget(null)}
+            onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+            title="Xóa diễn viên"
+            description={`Bạn có chắc muốn xóa "${deleteTarget?.name}"? Hành động này không thể hoàn tác.`}
+            isLoading={deleteMutation.isPending}
+         />
       </div>
    );
 }
