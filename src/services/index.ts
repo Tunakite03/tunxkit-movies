@@ -37,3 +37,6 @@ export { searchMovies, searchTV, searchMulti, fetchGenres, fetchTVGenres } from 
 
 // ─── Person Service ─────────────────────────────────────────
 export { fetchPersonDetail, fetchPersonCredits } from './person-service';
+
+// ─── Embed Service ──────────────────────────────────────────
+export { fetchMovieEmbed, fetchTVEmbed } from './embed-service';

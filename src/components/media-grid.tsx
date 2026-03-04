@@ -26,6 +26,7 @@ export function MediaGrid({ items, title, emptyMessage = 'Không tìm thấy k�
       <section>
          {title && <h2 className='mb-4 text-xl font-bold tracking-tight md:text-2xl'>{title}</h2>}
          <motion.div
+            key={items.map((i) => i.id).join(',')}
             variants={staggerContainer}
             initial='hidden'
             animate='visible'

@@ -2,10 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
 
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 import { ProgressBar } from '@/components/progress-bar';
-import { PageTransition } from '@/components/page-transition';
+import { LayoutShell } from '@/components/layout/layout-shell';
 import { AppProviders } from './provider';
 import { JsonLd, buildWebsiteSchema } from '@/lib/seo';
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, SITE_KEYWORDS } from '@/constants';
@@ -69,11 +67,7 @@ export default function RootLayout({
    children: React.ReactNode;
 }>) {
    return (
-      <html
-         lang='vi'
-         className='dark'
-         suppressHydrationWarning
-      >
+      <html lang="vi" className="dark" suppressHydrationWarning>
          <head>
             <script
                dangerouslySetInnerHTML={{
@@ -81,19 +75,16 @@ export default function RootLayout({
                }}
             />
          </head>
-         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+         <body
+            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+            suppressHydrationWarning
+         >
             <JsonLd data={buildWebsiteSchema()} />
             <AppProviders>
                <Suspense>
                   <ProgressBar />
                </Suspense>
-               <div className='flex min-h-screen flex-col '>
-                  <Header />
-                  <main className='flex-1 '>
-                     <PageTransition>{children}</PageTransition>
-                  </main>
-                  <Footer />
-               </div>
+               <LayoutShell>{children}</LayoutShell>
             </AppProviders>
          </body>
       </html>

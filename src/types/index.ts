@@ -334,3 +334,27 @@ export interface WatchProviderResponse {
    readonly id: number;
    readonly results: Readonly<Record<string, WatchProviderRegion>>;
 }
+
+// ─── Playback Sources ────────────────────────────────────────
+
+/** Source type for video playback */
+type SourceType = 'hls' | 'embed' | 'direct';
+
+/** A single playback source for streaming */
+export interface PlaybackSource {
+   readonly id: string;
+   readonly sourceType: SourceType;
+   readonly sourceUrl: string;
+   readonly label: string;
+   readonly quality: string;
+   readonly language: string;
+}
+
+/** Playback response from the API */
+export interface PlaybackResponse {
+   readonly mediaType: 'movie' | 'tv';
+   readonly mediaId: number;
+   readonly season: number;
+   readonly episode: number;
+   readonly sources: readonly PlaybackSource[];
+}

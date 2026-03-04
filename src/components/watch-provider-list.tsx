@@ -85,7 +85,7 @@ export function WatchProviderList({ providers }: WatchProviderListProps) {
             items={providers.buy}
          />
          <ProviderSection
-            title='📺 Miễn phí có quảng cáo'
+            title='Miễn phí có quảng cáo'
             items={providers.ads}
          />
 

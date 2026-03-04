@@ -1,0 +1,23 @@
+{
+  "version": "0.16.0",
+  "environments": [
+    "github"
+  ],
+  "phases": [
+    "requirements",
+    "design",
+    "planning",
+    "implementation",
+    "testing",
+    "deployment",
+    "monitoring"
+  ],
+  "createdAt": "2026-03-03T04:50:23.905Z",
+  "updatedAt": "2026-03-03T04:53:17.551Z",
+  "skills": [
+    {
+      "registry": "vercel-labs/agent-skills",
+      "name": "react-best-practices"
+    }
+  ]
+}

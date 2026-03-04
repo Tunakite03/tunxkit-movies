@@ -9,6 +9,7 @@ export interface AuthUser {
    readonly name: string | null;
    readonly email: string;
    readonly image: string | null;
+   readonly role: string;
 }
 
 interface AuthState {

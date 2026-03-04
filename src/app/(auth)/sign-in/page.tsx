@@ -78,7 +78,11 @@ export default function SignInPage() {
                   <label htmlFor="password" className="text-sm font-medium">
                      Mật khẩu
                   </label>
-                  <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                  <Link
+                     tabIndex={-1}
+                     href="/forgot-password"
+                     className="text-xs text-primary hover:underline"
+                  >
                      Quên mật khẩu?
                   </Link>
                </div>
