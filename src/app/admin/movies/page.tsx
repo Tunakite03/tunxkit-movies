@@ -9,6 +9,8 @@ import {
    getAdminMovies,
    deleteAdminMovie,
    createAdminMovie,
+   exportMoviesCsv,
+   importMoviesCsv,
 } from '@/services/admin-dashboard-service';
 import type { CreateMovieData } from '@/services/admin-dashboard-service';
 import { useAuthStore } from '@/store/auth-store';
@@ -25,6 +27,7 @@ import {
 import { AdminSearchBar, AdminPagination, AdminPageHeader } from '@/components/admin/admin-shared';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { CreateMovieDialog } from '@/components/admin/create-movie-dialog';
+import { ImportExportActions } from '@/components/admin/import-export-actions';
 import { useAdminSearchParams } from '@/hooks';
 
 export default function AdminMoviesPage() {
@@ -64,6 +67,19 @@ export default function AdminMoviesPage() {
       [setSearch],
    );
 
+   const handleExport = useCallback(() => exportMoviesCsv(token as string), [token]);
+
+   const handleImport = useCallback(
+      (file: File, mode: 'skip' | 'upsert') => {
+         return importMoviesCsv(file, mode, token as string).then((result) => {
+            queryClient.invalidateQueries({ queryKey: ['admin-movies'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+            return result;
+         });
+      },
+      [token, queryClient],
+   );
+
    return (
       <div className="space-y-6">
          <AdminPageHeader
@@ -71,11 +87,18 @@ export default function AdminMoviesPage() {
             description="Xem, tìm kiếm và quản lý danh sách phim"
             icon={<Film className="h-6 w-6 text-blue-500" />}
             actions={
-               <CreateMovieDialog
-                  onSubmit={(data) => createMutation.mutate(data)}
-                  isPending={createMutation.isPending}
-                  isSuccess={createMutation.isSuccess}
-               />
+               <>
+                  <ImportExportActions
+                     entityLabel="Phim"
+                     onExport={handleExport}
+                     onImport={handleImport}
+                  />
+                  <CreateMovieDialog
+                     onSubmit={(data) => createMutation.mutate(data)}
+                     isPending={createMutation.isPending}
+                     isSuccess={createMutation.isSuccess}
+                  />
+               </>
             }
          />
 
@@ -116,7 +139,9 @@ export default function AdminMoviesPage() {
                               {movie.id}
                            </TableCell>
                            <TableCell className="max-w-[250px] truncate font-medium">
-                              {movie.title}
+                              <Link href={`/admin/movies/${movie.id}`} className="hover:underline">
+                                 {movie.title}
+                              </Link>
                            </TableCell>
                            <TableCell className="hidden text-muted-foreground md:table-cell">
                               {movie.releaseDate || '—'}

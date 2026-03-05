@@ -600,7 +600,16 @@ export default function AdminTVShowDetailPage() {
 
             {/* Video Sources Tab */}
             <TabsContent value="sources">
-               <VideoSourcesTab mediaType="tv" mediaId={data.id} mediaTitle={data.name} />
+               <VideoSourcesTab
+                  mediaType="tv"
+                  mediaId={data.id}
+                  mediaTitle={data.name}
+                  seasons={data.seasons.map((s) => ({
+                     seasonNumber: s.seasonNumber,
+                     name: s.name,
+                     episodeCount: s.episodeCount,
+                  }))}
+               />
             </TabsContent>
          </Tabs>
 

@@ -98,6 +98,13 @@ function buildFormFromSource(source: AdminVideoSource): SourceFormState {
 
 // ─── Props ──────────────────────────────────────────────────
 
+/** Season info shape for the episode picker */
+interface SeasonInfo {
+   readonly seasonNumber: number;
+   readonly name: string;
+   readonly episodeCount: number;
+}
+
 interface VideoSourcesTabProps {
    /** 'movie' or 'tv' */
    readonly mediaType: 'movie' | 'tv';
@@ -105,37 +112,54 @@ interface VideoSourcesTabProps {
    readonly mediaId: number;
    /** Display name — used in dialog descriptions */
    readonly mediaTitle: string;
-   /** Optional season filter (for TV shows) */
-   readonly season?: number;
-   /** Optional episode filter (for TV shows) */
-   readonly episode?: number;
+   /** TV show season data — required for TV mediaType to enable episode picker */
+   readonly seasons?: readonly SeasonInfo[];
 }
 
 /**
  * Reusable tab content for managing video sources (HLS, embed, direct)
  * on the admin movie/TV show detail pages.
+ *
+ * For TV shows, renders a season/episode picker before the sources table.
  */
-export function VideoSourcesTab({
-   mediaType,
-   mediaId,
-   mediaTitle,
-   season,
-   episode,
-}: VideoSourcesTabProps) {
+export function VideoSourcesTab({ mediaType, mediaId, mediaTitle, seasons }: VideoSourcesTabProps) {
    const { token } = useAuthStore();
    const queryClient = useQueryClient();
 
+   // ─── Season / Episode selection (TV only) ────────────────
+   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+   const [selectedEpisode, setSelectedEpisode] = useState<number | null>(null);
+
+   const isTv = mediaType === 'tv' && seasons && seasons.length > 0;
+   const currentSeasonInfo = isTv ? seasons.find((s) => s.seasonNumber === selectedSeason) : null;
+
+   // For movies: no season/episode needed. For TV: use selected values.
+   const effectiveSeason = isTv ? (selectedSeason ?? undefined) : undefined;
+   const effectiveEpisode = isTv ? (selectedEpisode ?? undefined) : undefined;
+
+   // Whether we have enough context to show/manage sources
+   const canShowSources =
+      mediaType === 'movie' || (selectedSeason != null && selectedEpisode != null);
+
+   // ─── Dialog state ────────────────────────────────────────
    const [isCreateOpen, setIsCreateOpen] = useState(false);
    const [editTarget, setEditTarget] = useState<AdminVideoSource | null>(null);
    const [deleteTarget, setDeleteTarget] = useState<AdminVideoSource | null>(null);
    const [form, setForm] = useState<SourceFormState>(INITIAL_FORM);
 
-   const queryKey = ['admin-video-sources', mediaType, mediaId, season, episode];
+   const queryKey = ['admin-video-sources', mediaType, mediaId, effectiveSeason, effectiveEpisode];
 
    const { data, isLoading } = useQuery({
       queryKey,
-      queryFn: () => getAdminVideoSources(mediaType, mediaId, token as string, season, episode),
-      enabled: !!token,
+      queryFn: () =>
+         getAdminVideoSources(
+            mediaType,
+            mediaId,
+            token as string,
+            effectiveSeason,
+            effectiveEpisode,
+         ),
+      enabled: !!token && canShowSources,
    });
 
    const createMutation = useMutation({
@@ -168,6 +192,16 @@ export function VideoSourcesTab({
 
    // ─── Handlers ──────────────────────────────────────────────
 
+   const handleSeasonChange = useCallback((value: string) => {
+      const season = Number(value);
+      setSelectedSeason(season);
+      setSelectedEpisode(null); // Reset episode when season changes
+   }, []);
+
+   const handleEpisodeSelect = useCallback((ep: number) => {
+      setSelectedEpisode(ep);
+   }, []);
+
    const handleFormChange = useCallback((field: keyof SourceFormState, value: string) => {
       setForm((prev) => ({ ...prev, [field]: value }));
    }, []);
@@ -175,12 +209,15 @@ export function VideoSourcesTab({
    const handleOpenCreate = useCallback(() => {
       setForm(INITIAL_FORM);
       setIsCreateOpen(true);
-   }, []);
+   }, [setIsCreateOpen]);
 
-   const handleOpenEdit = useCallback((source: AdminVideoSource) => {
-      setForm(buildFormFromSource(source));
-      setEditTarget(source);
-   }, []);
+   const handleOpenEdit = useCallback(
+      (source: AdminVideoSource) => {
+         setForm(buildFormFromSource(source));
+         setEditTarget(source);
+      },
+      [setEditTarget],
+   );
 
    const handleCreate = useCallback(
       (e: FormEvent) => {
@@ -190,8 +227,8 @@ export function VideoSourcesTab({
          createMutation.mutate({
             mediaType,
             mediaId,
-            season,
-            episode,
+            season: effectiveSeason,
+            episode: effectiveEpisode,
             sourceType: form.sourceType,
             sourceUrl: form.sourceUrl.trim(),
             label: form.label || undefined,
@@ -200,7 +237,7 @@ export function VideoSourcesTab({
             priority: form.priority ? Number(form.priority) : undefined,
          });
       },
-      [mediaType, mediaId, season, episode, form, createMutation],
+      [mediaType, mediaId, effectiveSeason, effectiveEpisode, form, createMutation],
    );
 
    const handleUpdate = useCallback(
@@ -235,107 +272,187 @@ export function VideoSourcesTab({
 
    // ─── Render ────────────────────────────────────────────────
 
-   if (isLoading) {
-      return (
-         <div className="flex min-h-[20vh] items-center justify-center">
-            <Loader2 className="size-6 animate-spin text-primary" />
-         </div>
-      );
-   }
-
    const sources = data?.sources ?? [];
 
    return (
       <div className="space-y-4">
-         {/* Header */}
-         <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{sources.length} nguồn phát</p>
-            <Button size="sm" variant="outline" onClick={handleOpenCreate}>
-               <Plus className="mr-1 h-4 w-4" /> Thêm nguồn phát
-            </Button>
-         </div>
+         {/* Season / Episode Picker for TV shows */}
+         {isTv && (
+            <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+               <h3 className="text-sm font-semibold">Chọn mùa & tập</h3>
 
-         {/* Table */}
-         <div className="rounded-lg border border-border bg-card">
-            <Table>
-               <TableHeader>
-                  <TableRow>
-                     <TableHead className="w-24">Loại</TableHead>
-                     <TableHead>URL</TableHead>
-                     <TableHead className="w-28">Nhãn</TableHead>
-                     <TableHead className="hidden w-20 sm:table-cell">Chất lượng</TableHead>
-                     <TableHead className="hidden w-20 md:table-cell">Ngôn ngữ</TableHead>
-                     <TableHead className="hidden w-16 md:table-cell">Ưu tiên</TableHead>
-                     <TableHead className="w-20">Trạng thái</TableHead>
-                     <TableHead className="w-24 text-right">Thao tác</TableHead>
-                  </TableRow>
-               </TableHeader>
-               <TableBody>
-                  {sources.length > 0 ? (
-                     sources.map((source) => (
-                        <TableRow key={source.id}>
-                           <TableCell>
-                              <Badge variant="outline" className="text-xs">
-                                 <SourceTypeIcon type={source.sourceType} />
-                                 {source.sourceType}
-                              </Badge>
-                           </TableCell>
-                           <TableCell className="max-w-[200px] truncate font-mono text-xs">
-                              {source.sourceUrl}
-                           </TableCell>
-                           <TableCell>{source.label || '—'}</TableCell>
-                           <TableCell className="hidden sm:table-cell">
-                              {source.quality || '—'}
-                           </TableCell>
-                           <TableCell className="hidden md:table-cell">
-                              {source.language || '—'}
-                           </TableCell>
-                           <TableCell className="hidden text-center md:table-cell">
-                              {source.priority}
-                           </TableCell>
-                           <TableCell>
-                              <Button
-                                 variant={source.isActive ? 'default' : 'outline'}
-                                 size="sm"
-                                 className="h-6 text-xs"
-                                 onClick={() => handleToggleActive(source)}
-                              >
-                                 {source.isActive ? 'Bật' : 'Tắt'}
-                              </Button>
-                           </TableCell>
-                           <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                 <Button
-                                    variant="ghost"
-                                    size="icon-xs"
-                                    onClick={() => handleOpenEdit(source)}
+               {/* Season selector */}
+               <div className="flex flex-wrap items-end gap-3">
+                  <div className="space-y-1">
+                     <span className="text-xs font-medium text-muted-foreground">Mùa</span>
+                     <Select
+                        value={selectedSeason != null ? String(selectedSeason) : ''}
+                        onValueChange={handleSeasonChange}
+                     >
+                        <SelectTrigger className="w-48">
+                           <SelectValue placeholder="Chọn mùa..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                           {seasons.map((s) => (
+                              <SelectItem key={s.seasonNumber} value={String(s.seasonNumber)}>
+                                 Mùa {s.seasonNumber} — {s.name} ({s.episodeCount} tập)
+                              </SelectItem>
+                           ))}
+                        </SelectContent>
+                     </Select>
+                  </div>
+               </div>
+
+               {/* Episode grid */}
+               {currentSeasonInfo && currentSeasonInfo.episodeCount > 0 && (
+                  <div className="space-y-1">
+                     <span className="text-xs font-medium text-muted-foreground">
+                        Tập ({currentSeasonInfo.episodeCount} tập)
+                     </span>
+                     <div className="flex flex-wrap gap-1.5">
+                        {Array.from(
+                           { length: currentSeasonInfo.episodeCount },
+                           (_, i) => i + 1,
+                        ).map((ep) => (
+                           <Button
+                              key={ep}
+                              variant={selectedEpisode === ep ? 'default' : 'outline'}
+                              size="sm"
+                              className="h-8 w-10 text-xs"
+                              onClick={() => handleEpisodeSelect(ep)}
+                           >
+                              {ep}
+                           </Button>
+                        ))}
+                     </div>
+                  </div>
+               )}
+
+               {/* Current selection summary */}
+               {selectedSeason != null && selectedEpisode != null && (
+                  <p className="text-xs text-muted-foreground">
+                     Đang quản lý nguồn phát cho:{' '}
+                     <span className="font-medium text-foreground">
+                        Mùa {selectedSeason}, Tập {selectedEpisode}
+                     </span>
+                  </p>
+               )}
+            </div>
+         )}
+
+         {/* Prompt to select season/episode if TV and not selected yet */}
+         {isTv && !canShowSources && (
+            <div className="flex min-h-[15vh] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border text-muted-foreground">
+               <Film className="size-8" />
+               <p className="text-sm">Vui lòng chọn mùa và tập để quản lý nguồn phát.</p>
+            </div>
+         )}
+
+         {/* Sources management — shown when we have enough context */}
+         {canShowSources && (
+            <>
+               {/* Header */}
+               <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">{sources.length} nguồn phát</p>
+                  <Button size="sm" variant="outline" onClick={handleOpenCreate}>
+                     <Plus className="mr-1 h-4 w-4" /> Thêm nguồn phát
+                  </Button>
+               </div>
+
+               {/* Table */}
+               {isLoading ? (
+                  <div className="flex min-h-[20vh] items-center justify-center">
+                     <Loader2 className="size-6 animate-spin text-primary" />
+                  </div>
+               ) : (
+                  <div className="rounded-lg border border-border bg-card">
+                     <Table>
+                        <TableHeader>
+                           <TableRow>
+                              <TableHead className="w-24">Loại</TableHead>
+                              <TableHead>URL</TableHead>
+                              <TableHead className="w-28">Nhãn</TableHead>
+                              <TableHead className="hidden w-20 sm:table-cell">
+                                 Chất lượng
+                              </TableHead>
+                              <TableHead className="hidden w-20 md:table-cell">Ngôn ngữ</TableHead>
+                              <TableHead className="hidden w-16 md:table-cell">Ưu tiên</TableHead>
+                              <TableHead className="w-20">Trạng thái</TableHead>
+                              <TableHead className="w-24 text-right">Thao tác</TableHead>
+                           </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                           {sources.length > 0 ? (
+                              sources.map((source) => (
+                                 <TableRow key={source.id}>
+                                    <TableCell>
+                                       <Badge variant="outline" className="text-xs">
+                                          <SourceTypeIcon type={source.sourceType} />
+                                          {source.sourceType}
+                                       </Badge>
+                                    </TableCell>
+                                    <TableCell className="max-w-[200px] truncate font-mono text-xs">
+                                       {source.sourceUrl}
+                                    </TableCell>
+                                    <TableCell>{source.label || '—'}</TableCell>
+                                    <TableCell className="hidden sm:table-cell">
+                                       {source.quality || '—'}
+                                    </TableCell>
+                                    <TableCell className="hidden md:table-cell">
+                                       {source.language || '—'}
+                                    </TableCell>
+                                    <TableCell className="hidden text-center md:table-cell">
+                                       {source.priority}
+                                    </TableCell>
+                                    <TableCell>
+                                       <Button
+                                          variant={source.isActive ? 'default' : 'outline'}
+                                          size="sm"
+                                          className="h-6 text-xs"
+                                          onClick={() => handleToggleActive(source)}
+                                       >
+                                          {source.isActive ? 'Bật' : 'Tắt'}
+                                       </Button>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                       <div className="flex items-center justify-end gap-1">
+                                          <Button
+                                             variant="ghost"
+                                             size="icon-xs"
+                                             onClick={() => handleOpenEdit(source)}
+                                          >
+                                             <Edit className="size-3" />
+                                             <span className="sr-only">Sửa</span>
+                                          </Button>
+                                          <Button
+                                             variant="ghost"
+                                             size="icon-xs"
+                                             onClick={() => setDeleteTarget(source)}
+                                             className="text-destructive hover:text-destructive"
+                                          >
+                                             <Trash2 className="size-3" />
+                                             <span className="sr-only">Xóa</span>
+                                          </Button>
+                                       </div>
+                                    </TableCell>
+                                 </TableRow>
+                              ))
+                           ) : (
+                              <TableRow>
+                                 <TableCell
+                                    colSpan={8}
+                                    className="py-8 text-center text-muted-foreground"
                                  >
-                                    <Edit className="size-3" />
-                                    <span className="sr-only">Sửa</span>
-                                 </Button>
-                                 <Button
-                                    variant="ghost"
-                                    size="icon-xs"
-                                    onClick={() => setDeleteTarget(source)}
-                                    className="text-destructive hover:text-destructive"
-                                 >
-                                    <Trash2 className="size-3" />
-                                    <span className="sr-only">Xóa</span>
-                                 </Button>
-                              </div>
-                           </TableCell>
-                        </TableRow>
-                     ))
-                  ) : (
-                     <TableRow>
-                        <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
-                           Chưa có nguồn phát nào. Bấm &quot;Thêm nguồn phát&quot; để thêm.
-                        </TableCell>
-                     </TableRow>
-                  )}
-               </TableBody>
-            </Table>
-         </div>
+                                    Chưa có nguồn phát nào. Bấm &quot;Thêm nguồn phát&quot; để thêm.
+                                 </TableCell>
+                              </TableRow>
+                           )}
+                        </TableBody>
+                     </Table>
+                  </div>
+               )}
+            </>
+         )}
 
          {/* Create Dialog */}
          <SourceFormDialog
@@ -346,7 +463,11 @@ export function VideoSourcesTab({
             onChange={handleFormChange}
             isPending={createMutation.isPending}
             title="Thêm nguồn phát"
-            description={`Thêm nguồn phát mới cho "${mediaTitle}".`}
+            description={
+               isTv && selectedSeason != null && selectedEpisode != null
+                  ? `Thêm nguồn phát cho "${mediaTitle}" — Mùa ${selectedSeason}, Tập ${selectedEpisode}.`
+                  : `Thêm nguồn phát mới cho "${mediaTitle}".`
+            }
             submitLabel="Thêm"
          />
 

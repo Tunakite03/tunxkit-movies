@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserCircle, ExternalLink, Trash2 } from 'lucide-react';
+import { UserCircle, ExternalLink, Trash2, Pencil } from 'lucide-react';
 import Link from 'next/link';
 
 import {
@@ -115,7 +115,9 @@ export default function AdminPeoplePage() {
                               {person.id}
                            </TableCell>
                            <TableCell className="max-w-[250px] truncate font-medium">
-                              {person.name}
+                              <Link href={`/admin/people/${person.id}`} className="hover:underline">
+                                 {person.name}
+                              </Link>
                            </TableCell>
                            <TableCell className="hidden sm:table-cell">
                               <Badge variant="secondary">
@@ -133,6 +135,16 @@ export default function AdminPeoplePage() {
                            </TableCell>
                            <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
+                                 <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    asChild
+                                    aria-label="Chỉnh sửa"
+                                 >
+                                    <Link href={`/admin/people/${person.id}`}>
+                                       <Pencil className="h-3 w-3" />
+                                    </Link>
+                                 </Button>
                                  <Button variant="ghost" size="icon-xs" asChild>
                                     <Link href={`/people/${person.id}`} target="_blank">
                                        <ExternalLink className="h-3 w-3" />

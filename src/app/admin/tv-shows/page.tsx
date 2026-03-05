@@ -9,6 +9,8 @@ import {
    getAdminTVShows,
    deleteAdminTVShow,
    createAdminTVShow,
+   exportTVShowsCsv,
+   importTVShowsCsv,
 } from '@/services/admin-dashboard-service';
 import type { CreateTVShowData } from '@/services/admin-dashboard-service';
 import { useAuthStore } from '@/store/auth-store';
@@ -25,6 +27,7 @@ import {
 import { AdminSearchBar, AdminPagination, AdminPageHeader } from '@/components/admin/admin-shared';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { CreateTVShowDialog } from '@/components/admin/create-tvshow-dialog';
+import { ImportExportActions } from '@/components/admin/import-export-actions';
 import { useAdminSearchParams } from '@/hooks';
 
 export default function AdminTVShowsPage() {
@@ -64,6 +67,19 @@ export default function AdminTVShowsPage() {
       [setSearch],
    );
 
+   const handleExport = useCallback(() => exportTVShowsCsv(token as string), [token]);
+
+   const handleImport = useCallback(
+      (file: File, mode: 'skip' | 'upsert') => {
+         return importTVShowsCsv(file, mode, token as string).then((result) => {
+            queryClient.invalidateQueries({ queryKey: ['admin-tv-shows'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+            return result;
+         });
+      },
+      [token, queryClient],
+   );
+
    return (
       <div className="space-y-6">
          <AdminPageHeader
@@ -71,11 +87,18 @@ export default function AdminTVShowsPage() {
             description="Xem, tìm kiếm và quản lý danh sách TV shows"
             icon={<Tv className="h-6 w-6 text-purple-500" />}
             actions={
-               <CreateTVShowDialog
-                  onSubmit={(data) => createMutation.mutate(data)}
-                  isPending={createMutation.isPending}
-                  isSuccess={createMutation.isSuccess}
-               />
+               <>
+                  <ImportExportActions
+                     entityLabel="Phim bộ"
+                     onExport={handleExport}
+                     onImport={handleImport}
+                  />
+                  <CreateTVShowDialog
+                     onSubmit={(data) => createMutation.mutate(data)}
+                     isPending={createMutation.isPending}
+                     isSuccess={createMutation.isSuccess}
+                  />
+               </>
             }
          />
 
@@ -116,7 +139,9 @@ export default function AdminTVShowsPage() {
                               {show.id}
                            </TableCell>
                            <TableCell className="max-w-[250px] truncate font-medium">
-                              {show.name}
+                              <Link href={`/admin/tv-shows/${show.id}`} className="hover:underline">
+                                 {show.name}
+                              </Link>
                            </TableCell>
                            <TableCell className="hidden text-muted-foreground md:table-cell">
                               {show.firstAirDate || '—'}

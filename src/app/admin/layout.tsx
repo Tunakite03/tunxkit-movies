@@ -93,7 +93,7 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
 
          {/* Sidebar */}
          <aside
-            className={`fixed top-0 left-0 z-50 flex h-full w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:static lg:translate-x-0 ${
+            className={`fixed top-0 left-0 z-50 flex h-screen w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:translate-x-0 ${
                isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
          >
@@ -173,7 +173,7 @@ export default function AdminLayout({ children }: { readonly children: React.Rea
          </aside>
 
          {/* Main content */}
-         <main className="flex-1 overflow-auto">
+         <main className="flex-1 overflow-auto lg:ml-64">
             {/* Mobile header */}
             <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-sm lg:hidden">
                <Button
