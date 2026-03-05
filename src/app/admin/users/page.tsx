@@ -2,9 +2,16 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Trash2, ShieldCheck, Shield } from 'lucide-react';
+import { Users, Trash2, ShieldCheck, Shield, Eye } from 'lucide-react';
+import Link from 'next/link';
 
-import { getAdminUsers, updateUserRole, deleteAdminUser } from '@/services/admin-dashboard-service';
+import {
+   getAdminUsers,
+   updateUserRole,
+   deleteAdminUser,
+   createAdminUser,
+} from '@/services/admin-dashboard-service';
+import type { CreateUserData } from '@/services/admin-dashboard-service';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +25,7 @@ import {
 } from '@/components/ui/table';
 import { AdminSearchBar, AdminPagination, AdminPageHeader } from '@/components/admin/admin-shared';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import { CreateUserDialog } from '@/components/admin/create-user-dialog';
 import { useAdminSearchParams } from '@/hooks';
 
 export default function AdminUsersPage() {
@@ -56,6 +64,14 @@ export default function AdminUsersPage() {
       },
    });
 
+   const createMutation = useMutation({
+      mutationFn: (data: CreateUserData) => createAdminUser(data, token as string),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+         queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      },
+   });
+
    const handleSearch = useCallback(
       (query: string) => {
          setSearch(query);
@@ -77,6 +93,14 @@ export default function AdminUsersPage() {
             title="Quản lý Người dùng"
             description="Quản lý tài khoản, phân quyền người dùng"
             icon={<Users className="h-6 w-6 text-green-500" />}
+            actions={
+               <CreateUserDialog
+                  onSubmit={(data) => createMutation.mutate(data)}
+                  isPending={createMutation.isPending}
+                  isSuccess={createMutation.isSuccess}
+                  onSuccessHandled={() => createMutation.reset()}
+               />
+            }
          />
 
          <AdminSearchBar
@@ -114,7 +138,12 @@ export default function AdminUsersPage() {
                            <TableRow key={user.id}>
                               <TableCell className="font-medium">
                                  <div className="flex items-center gap-2">
-                                    {user.name ?? 'Chưa đặt tên'}
+                                    <Link
+                                       href={`/admin/users/${user.id}`}
+                                       className="hover:text-primary hover:underline"
+                                    >
+                                       {user.name ?? 'Chưa đặt tên'}
+                                    </Link>
                                     {isCurrentUser && (
                                        <Badge variant="outline" className="text-xs">
                                           Bạn
@@ -143,41 +172,54 @@ export default function AdminUsersPage() {
                                  {formatDate(user.createdAt)}
                               </TableCell>
                               <TableCell className="text-right">
-                                 {!isCurrentUser && (
-                                    <div className="flex items-center justify-end gap-1">
-                                       <Button
-                                          variant="ghost"
-                                          size="icon-xs"
-                                          onClick={() =>
-                                             setRoleTarget({
-                                                id: user.id,
-                                                name: user.name ?? user.email,
-                                                newRole: user.role === 'ADMIN' ? 'USER' : 'ADMIN',
-                                             })
-                                          }
-                                          title={
-                                             user.role === 'ADMIN'
-                                                ? 'Hạ xuống User'
-                                                : 'Nâng lên Admin'
-                                          }
-                                       >
-                                          <Shield className="h-3 w-3" />
-                                       </Button>
-                                       <Button
-                                          variant="ghost"
-                                          size="icon-xs"
-                                          onClick={() =>
-                                             setDeleteTarget({
-                                                id: user.id,
-                                                name: user.name ?? user.email,
-                                             })
-                                          }
-                                          className="text-destructive hover:text-destructive"
-                                       >
-                                          <Trash2 className="h-3 w-3" />
-                                       </Button>
-                                    </div>
-                                 )}
+                                 <div className="flex items-center justify-end gap-1">
+                                    <Button
+                                       variant="ghost"
+                                       size="icon-xs"
+                                       asChild
+                                       title="Xem chi tiết"
+                                    >
+                                       <Link href={`/admin/users/${user.id}`}>
+                                          <Eye className="h-3 w-3" />
+                                       </Link>
+                                    </Button>
+                                    {!isCurrentUser && (
+                                       <>
+                                          <Button
+                                             variant="ghost"
+                                             size="icon-xs"
+                                             onClick={() =>
+                                                setRoleTarget({
+                                                   id: user.id,
+                                                   name: user.name ?? user.email,
+                                                   newRole:
+                                                      user.role === 'ADMIN' ? 'USER' : 'ADMIN',
+                                                })
+                                             }
+                                             title={
+                                                user.role === 'ADMIN'
+                                                   ? 'Hạ xuống User'
+                                                   : 'Nâng lên Admin'
+                                             }
+                                          >
+                                             <Shield className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                             variant="ghost"
+                                             size="icon-xs"
+                                             onClick={() =>
+                                                setDeleteTarget({
+                                                   id: user.id,
+                                                   name: user.name ?? user.email,
+                                                })
+                                             }
+                                             className="text-destructive hover:text-destructive"
+                                          >
+                                             <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                       </>
+                                    )}
+                                 </div>
                               </TableCell>
                            </TableRow>
                         );

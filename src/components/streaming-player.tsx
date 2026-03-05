@@ -2,10 +2,20 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Hls from 'hls.js';
-import { AlertTriangle, MonitorPlay, RefreshCw, Film, Globe, Play } from 'lucide-react';
+import {
+   AlertTriangle,
+   MonitorPlay,
+   RefreshCw,
+   Film,
+   Globe,
+   Play,
+   Maximize2,
+   Minimize2,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import type { PlaybackSource } from '@/types';
 
 interface StreamingPlayerProps {
@@ -88,17 +98,51 @@ function HlsPlayer({ source, title, onError }: VideoPlayerProps) {
 
 /** Iframe embed player for third-party sources */
 function EmbedPlayer({ source, title, onError }: VideoPlayerProps) {
+   const [isLoaded, setIsLoaded] = useState(false);
+   const [showHint, setShowHint] = useState(false);
+
+   useEffect(() => {
+      setIsLoaded(false);
+      setShowHint(false);
+
+      const timer = setTimeout(() => {
+         if (!isLoaded) setShowHint(true);
+      }, 8_000);
+
+      return () => clearTimeout(timer);
+   }, [source.sourceUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+   const handleLoad = useCallback(() => {
+      setIsLoaded(true);
+      setShowHint(false);
+   }, []);
+
    return (
-      <iframe
-         src={source.sourceUrl}
-         title={title}
-         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-         allowFullScreen
-         className="absolute inset-0 size-full border-0"
-         referrerPolicy="origin"
-         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-         onError={onError}
-      />
+      <>
+         <iframe
+            src={source.sourceUrl}
+            title={title}
+            allow="accelerometer *; autoplay *; clipboard-write *; encrypted-media *; gyroscope *; picture-in-picture *; fullscreen *"
+            className="absolute inset-0 size-full border-0"
+            referrerPolicy="origin"
+            onLoad={handleLoad}
+            onError={onError}
+         />
+         {showHint && !isLoaded && (
+            <div className="absolute inset-x-0 bottom-0 z-10 bg-black/80 px-4 py-3 text-center text-sm text-white backdrop-blur-sm">
+               <p className="text-muted-foreground">
+                  Nguồn phát không tải được?{' '}
+                  <button
+                     type="button"
+                     className="font-medium text-primary underline underline-offset-2"
+                     onClick={onError}
+                  >
+                     Thử nguồn khác
+                  </button>
+               </p>
+            </div>
+         )}
+      </>
    );
 }
 
@@ -116,6 +160,35 @@ function DirectPlayer({ source, title, onError }: VideoPlayerProps) {
    );
 }
 
+// ─── Fullscreen hook ─────────────────────────────────────────
+
+function useFullscreen(ref: React.RefObject<HTMLDivElement | null>) {
+   const [isFullscreen, setIsFullscreen] = useState(false);
+
+   useEffect(() => {
+      const handleChange = () => {
+         setIsFullscreen(document.fullscreenElement === ref.current);
+      };
+      document.addEventListener('fullscreenchange', handleChange);
+      return () => document.removeEventListener('fullscreenchange', handleChange);
+   }, [ref]);
+
+   const toggleFullscreen = useCallback(async () => {
+      if (!ref.current) return;
+      try {
+         if (document.fullscreenElement) {
+            await document.exitFullscreen();
+         } else {
+            await ref.current.requestFullscreen();
+         }
+      } catch {
+         // Fullscreen not supported or denied by browser
+      }
+   }, [ref]);
+
+   return { isFullscreen, toggleFullscreen };
+}
+
 // ─── Main component ─────────────────────────────────────────
 
 /**
@@ -125,6 +198,8 @@ function DirectPlayer({ source, title, onError }: VideoPlayerProps) {
 export function StreamingPlayer({ sources, title }: StreamingPlayerProps) {
    const [activeIndex, setActiveIndex] = useState(0);
    const [hasError, setHasError] = useState(false);
+   const containerRef = useRef<HTMLDivElement>(null);
+   const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef);
 
    const activeSource = sources[activeIndex];
 
@@ -140,6 +215,16 @@ export function StreamingPlayer({ sources, title }: StreamingPlayerProps) {
    const handleError = useCallback(() => {
       setHasError(true);
    }, []);
+
+   const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent) => {
+         if (e.key === 'f' || e.key === 'F') {
+            e.preventDefault();
+            void toggleFullscreen();
+         }
+      },
+      [toggleFullscreen],
+   );
 
    if (sources.length === 0) {
       return (
@@ -157,7 +242,15 @@ export function StreamingPlayer({ sources, title }: StreamingPlayerProps) {
    return (
       <div className="space-y-3">
          {/* Video Player */}
-         <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
+         <div
+            ref={containerRef}
+            tabIndex={-1}
+            onKeyDown={handleKeyDown}
+            className={cn(
+               'group relative w-full overflow-hidden bg-black focus:outline-none',
+               isFullscreen ? 'flex items-center justify-center' : 'aspect-video rounded-lg',
+            )}
+         >
             {hasError ? (
                <div className="flex size-full items-center justify-center bg-muted">
                   <div className="text-center">
@@ -184,10 +277,20 @@ export function StreamingPlayer({ sources, title }: StreamingPlayerProps) {
                   onError={handleError}
                />
             )}
+
+            {/* Fullscreen toggle — works for all source types */}
+            <button
+               type="button"
+               onClick={toggleFullscreen}
+               className="absolute right-3 top-3 z-10 rounded-md bg-black/60 p-2 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100"
+               title={isFullscreen ? 'Thu nhỏ (F)' : 'Phóng to (F)'}
+            >
+               {isFullscreen ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
+            </button>
          </div>
 
          {/* Source Selector */}
-         {sources.length > 1 && (
+         {sources.length >= 1 && (
             <div className="space-y-2">
                <p className="text-sm font-medium text-muted-foreground">
                   Nguồn phát ({activeIndex + 1}/{sources.length})

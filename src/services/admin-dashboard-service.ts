@@ -23,6 +23,8 @@ export interface DashboardStats {
    readonly movieVideos: number;
    readonly tvVideos: number;
    readonly watchlistItems: number;
+   readonly videoSources: number;
+   readonly activeVideoSources: number;
    readonly recentUsers: readonly AdminUser[];
    readonly recentMovies: readonly AdminMovieItem[];
    readonly recentTVShows: readonly AdminTVShowItem[];
@@ -46,6 +48,37 @@ export interface AdminUser {
    readonly _count: {
       readonly watchlist: number;
    };
+}
+
+// ─── Admin User Detail ──────────────────────────────────────
+
+export interface AdminUserDetail {
+   readonly id: string;
+   readonly name: string | null;
+   readonly email: string;
+   readonly image: string | null;
+   readonly role: string;
+   readonly emailVerified: string | null;
+   readonly createdAt: string;
+   readonly updatedAt: string;
+   readonly _count: {
+      readonly watchlist: number;
+      readonly accounts: number;
+   };
+}
+
+export interface UpdateUserData {
+   readonly name?: string;
+   readonly email?: string;
+   readonly image?: string;
+   readonly role?: 'USER' | 'ADMIN';
+}
+
+export interface CreateUserData {
+   readonly email: string;
+   readonly password: string;
+   readonly name?: string;
+   readonly role?: 'USER' | 'ADMIN';
 }
 
 // ─── Admin Movie ────────────────────────────────────────────
@@ -379,6 +412,36 @@ export function deleteAdminUser(userId: string, token: string): Promise<{ messag
    });
 }
 
+/** Get user detail for admin */
+export function getAdminUserDetail(userId: string, token: string): Promise<AdminUserDetail> {
+   return fetchAPI<AdminUserDetail>(`/admin/users/${userId}`, { token, cache: 'no-store' });
+}
+
+/** Update a user */
+export function updateAdminUser(
+   userId: string,
+   data: UpdateUserData,
+   token: string,
+): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/users/${userId}`, {
+      method: 'PATCH',
+      body: data,
+      token,
+   });
+}
+
+/** Create a new user */
+export function createAdminUser(
+   data: CreateUserData,
+   token: string,
+): Promise<{ message: string; id: string }> {
+   return fetchAPI<{ message: string; id: string }>('/admin/users', {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
 /** List movies with search/pagination */
 export function getAdminMovies(
    token: string,
@@ -674,6 +737,53 @@ export interface PersonSearchResult {
    readonly profilePath: string | null;
 }
 
+export interface TmdbMovieSearchResult {
+   readonly id: number;
+   readonly title: string;
+   readonly posterPath: string | null;
+   readonly releaseDate: string;
+}
+
+export interface TmdbTvSearchResult {
+   readonly id: number;
+   readonly name: string;
+   readonly posterPath: string | null;
+   readonly firstAirDate: string;
+}
+
+export interface TmdbSearchResponse<T> {
+   readonly page: number;
+   readonly results: readonly T[];
+   readonly total_pages: number;
+   readonly total_results: number;
+}
+
+/** Search TMDB movies (for quick-add source picker) */
+export function searchTmdbMovies(
+   query: string,
+   page: number,
+   token: string,
+): Promise<TmdbSearchResponse<TmdbMovieSearchResult>> {
+   return fetchAPI<TmdbSearchResponse<TmdbMovieSearchResult>>('/admin/tmdb-search/movies', {
+      token,
+      params: { q: query, page },
+      cache: 'no-store',
+   });
+}
+
+/** Search TMDB TV shows (for quick-add source picker) */
+export function searchTmdbTv(
+   query: string,
+   page: number,
+   token: string,
+): Promise<TmdbSearchResponse<TmdbTvSearchResult>> {
+   return fetchAPI<TmdbSearchResponse<TmdbTvSearchResult>>('/admin/tmdb-search/tv', {
+      token,
+      params: { q: query, page },
+      cache: 'no-store',
+   });
+}
+
 /** Search people for cast auto-complete */
 export function searchAdminPeople(
    query: string,
@@ -828,4 +938,93 @@ export function deleteAdminVideoSource(
       method: 'DELETE',
       token,
    });
+}
+
+// ─── CSV Import / Export ────────────────────────────────────
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+
+export interface CsvImportResult {
+   readonly created: number;
+   readonly updated: number;
+   readonly skipped: number;
+   readonly failed: number;
+   readonly errors: readonly string[];
+}
+
+/** Download movies as a CSV file */
+export async function exportMoviesCsv(token: string): Promise<void> {
+   const res = await fetch(`${API_BASE}/admin/movies/export`, {
+      headers: { Authorization: `Bearer ${token}` },
+   });
+   if (!res.ok) throw new Error('Failed to export movies');
+   const blob = await res.blob();
+   downloadBlob(blob, 'movies.csv');
+}
+
+/** Upload a CSV file to import movies */
+export async function importMoviesCsv(
+   file: File,
+   mode: 'skip' | 'upsert',
+   token: string,
+): Promise<CsvImportResult> {
+   const form = new FormData();
+   form.append('file', file);
+
+   const res = await fetch(`${API_BASE}/admin/movies/import?mode=${mode}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+   });
+
+   if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: `Import failed: ${res.status}` }));
+      throw new Error((err as { message: string }).message);
+   }
+
+   return res.json() as Promise<CsvImportResult>;
+}
+
+/** Download TV shows as a CSV file */
+export async function exportTVShowsCsv(token: string): Promise<void> {
+   const res = await fetch(`${API_BASE}/admin/tv-shows/export`, {
+      headers: { Authorization: `Bearer ${token}` },
+   });
+   if (!res.ok) throw new Error('Failed to export TV shows');
+   const blob = await res.blob();
+   downloadBlob(blob, 'tv-shows.csv');
+}
+
+/** Upload a CSV file to import TV shows */
+export async function importTVShowsCsv(
+   file: File,
+   mode: 'skip' | 'upsert',
+   token: string,
+): Promise<CsvImportResult> {
+   const form = new FormData();
+   form.append('file', file);
+
+   const res = await fetch(`${API_BASE}/admin/tv-shows/import?mode=${mode}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+   });
+
+   if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: `Import failed: ${res.status}` }));
+      throw new Error((err as { message: string }).message);
+   }
+
+   return res.json() as Promise<CsvImportResult>;
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+   const url = URL.createObjectURL(blob);
+   const a = document.createElement('a');
+   a.href = url;
+   a.download = filename;
+   document.body.appendChild(a);
+   a.click();
+   a.remove();
+   URL.revokeObjectURL(url);
 }

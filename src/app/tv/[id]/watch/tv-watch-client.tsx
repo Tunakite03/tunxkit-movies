@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Star, Tv, Layers } from 'lucide-react';
+import { ArrowLeft, Star, Tv, Layers, AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,17 +38,20 @@ export function TVWatchClient({
    const [currentEpisode, setCurrentEpisode] = useState(initialEpisode);
    const [sources, setSources] = useState<readonly PlaybackSource[]>(initialSources);
    const [isLoading, setIsLoading] = useState(false);
+   const [error, setError] = useState<string | null>(null);
 
    const posterUrl = getPosterUrl(show.poster_path, 'large');
 
    const loadEpisodeSources = useCallback(
       async (season: number, episode: number) => {
          setIsLoading(true);
+         setError(null);
          try {
             const response = await fetchTVEmbed(show.id, season, episode);
             setSources(response.sources);
-         } catch {
+         } catch (err) {
             setSources([]);
+            setError(err instanceof Error ? err.message : 'Không thể tải nguồn phát');
          } finally {
             setIsLoading(false);
          }
@@ -72,6 +75,35 @@ export function TVWatchClient({
       },
       [currentSeason, loadEpisodeSources],
    );
+
+   // Validate and adjust season/episode on mount
+   useEffect(() => {
+      const validSeasons = show.seasons.filter(s => s.season_number > 0);
+      if (validSeasons.length === 0) return;
+
+      let targetSeason = currentSeason;
+      let targetEpisode = currentEpisode;
+
+      // Find the closest valid season
+      const closestSeason = validSeasons.reduce((prev, curr) => 
+         Math.abs(curr.season_number - targetSeason) < Math.abs(prev.season_number - targetSeason) ? curr : prev
+      );
+      targetSeason = closestSeason.season_number;
+
+      // Find the closest valid episode for that season
+      const seasonData = validSeasons.find(s => s.season_number === targetSeason);
+      if (seasonData && seasonData.episode_count > 0) {
+         targetEpisode = Math.min(targetEpisode, seasonData.episode_count);
+      } else {
+         targetEpisode = 1;
+      }
+
+      if (targetSeason !== currentSeason || targetEpisode !== currentEpisode) {
+         setCurrentSeason(targetSeason);
+         setCurrentEpisode(targetEpisode);
+         void loadEpisodeSources(targetSeason, targetEpisode);
+      }
+   }, [show.seasons, currentSeason, currentEpisode, loadEpisodeSources]);
 
    // Sync URL with current episode for bookmarking
    useEffect(() => {
@@ -117,7 +149,23 @@ export function TVWatchClient({
          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             {/* Streaming Player + Episode Selector — 2/3 */}
             <div className="space-y-6 lg:col-span-2">
-               {isLoading ? (
+               {error ? (
+                  <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-border bg-muted">
+                     <div className="text-center">
+                        <AlertTriangle className="mx-auto mb-3 size-10 text-destructive" />
+                        <p className="mb-2 text-destructive font-semibold">Không thể tải tập phim</p>
+                        <p className="text-sm text-muted-foreground">{error}</p>
+                        <div className="mt-4 flex justify-center gap-2">
+                           <Button variant="outline" size="sm" onClick={() => void loadEpisodeSources(currentSeason, currentEpisode)}>
+                              Thử lại
+                           </Button>
+                           <Button variant="outline" size="sm" asChild>
+                              <Link href={`/tv/${show.id}`}>Quay lại danh sách</Link>
+                           </Button>
+                        </div>
+                     </div>
+                  </div>
+               ) : isLoading ? (
                   <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-border bg-muted">
                      <div className="text-center">
                         <div className="mx-auto mb-3 size-8 animate-spin rounded-full border-4 border-muted-foreground border-t-primary" />

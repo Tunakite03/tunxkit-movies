@@ -115,6 +115,7 @@ export default async function MovieWatchPage({ params }: WatchPageProps) {
                         fill
                         sizes="(max-width: 1024px) 100vw, 33vw"
                         className="object-cover"
+                        priority
                      />
                   </div>
                   <div className="space-y-3 p-4">
