@@ -92,6 +92,7 @@ export default function AdminMoviesPage() {
                      entityLabel="Phim"
                      onExport={handleExport}
                      onImport={handleImport}
+                     sampleCsvUrl="/samples/movies-sample.csv"
                   />
                   <CreateMovieDialog
                      onSubmit={(data) => createMutation.mutate(data)}

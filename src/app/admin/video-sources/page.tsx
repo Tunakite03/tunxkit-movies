@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, type FormEvent } from 'react';
+import { useState, useCallback, useMemo, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import Image from 'next/image';
 import {
    PlayCircle,
    Plus,
@@ -12,7 +13,9 @@ import {
    Film,
    Globe,
    Play,
+   Tv,
    Video,
+   X,
 } from 'lucide-react';
 
 import {
@@ -20,13 +23,24 @@ import {
    createAdminVideoSource,
    updateAdminVideoSource,
    deleteAdminVideoSource,
+   searchTmdbMovies,
+   searchTmdbTv,
+   getAdminTVShowDetail,
+   getTmdbTVSeasons,
+   createAdminTVSeason,
 } from '@/services/admin-dashboard-service';
 import type {
    AdminVideoSource,
+   AdminSeasonItem,
    CreateVideoSourceData,
    UpdateVideoSourceData,
+   CreateTVSeasonData,
+   TmdbMovieSearchResult,
+   TmdbTvSearchResult,
 } from '@/services/admin-dashboard-service';
 import { useAuthStore } from '@/store/auth-store';
+import { useDebounce } from '@/hooks';
+import { IMAGE_SIZES } from '@/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -91,6 +105,10 @@ const INITIAL_SEARCH: SearchState = {
    episode: '',
 };
 
+type SelectedMedia =
+   | { readonly type: 'movie'; readonly item: TmdbMovieSearchResult }
+   | { readonly type: 'tv'; readonly item: TmdbTvSearchResult };
+
 // ─── Create / Edit form ─────────────────────────────────────
 
 interface SourceFormState {
@@ -133,10 +151,19 @@ export default function AdminVideoSourcesPage() {
    const [search, setSearch] = useState<SearchState>(INITIAL_SEARCH);
    const [activeSearch, setActiveSearch] = useState<SearchState | null>(null);
 
+   // Title search for media picker
+   const [titleSearch, setTitleSearch] = useState('');
+   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null);
+   const debouncedTitleSearch = useDebounce(titleSearch, 300);
+
    // Dialog state
    const [isCreateOpen, setIsCreateOpen] = useState(false);
    const [editTarget, setEditTarget] = useState<AdminVideoSource | null>(null);
    const [deleteTarget, setDeleteTarget] = useState<AdminVideoSource | null>(null);
+
+   // Quick-create season dialog
+   const [isSeasonDialogOpen, setIsSeasonDialogOpen] = useState(false);
+   const [seasonForm, setSeasonForm] = useState({ name: '', seasonNumber: '1', episodeCount: '1' });
 
    // Form state (shared between create and edit)
    const [form, setForm] = useState<SourceFormState>(INITIAL_FORM);
@@ -166,6 +193,58 @@ export default function AdminVideoSourcesPage() {
       enabled: !!token && !!activeSearch && !!activeSearch.mediaId,
    });
 
+   const { data: movieSearchData, isLoading: isSearchingMovies } = useQuery({
+      queryKey: ['admin-tmdb-search-movies', debouncedTitleSearch],
+      queryFn: () => searchTmdbMovies(debouncedTitleSearch, 1, token as string),
+      enabled: !!token && search.mediaType === 'movie' && debouncedTitleSearch.length >= 2,
+   });
+
+   const { data: tvSearchData, isLoading: isSearchingTv } = useQuery({
+      queryKey: ['admin-tmdb-search-tv', debouncedTitleSearch],
+      queryFn: () => searchTmdbTv(debouncedTitleSearch, 1, token as string),
+      enabled: !!token && search.mediaType === 'tv' && debouncedTitleSearch.length >= 2,
+   });
+
+   const titleSearchResults =
+      search.mediaType === 'movie' ? movieSearchData?.results : tvSearchData?.results;
+   const isSearchingTitle = search.mediaType === 'movie' ? isSearchingMovies : isSearchingTv;
+
+   // Fetch TV show details when a TV show is selected → gives us real season list
+   const selectedTvId = selectedMedia?.type === 'tv' ? selectedMedia.item.id : null;
+
+   const { data: tvDetail, isLoading: isLoadingTvDetail } = useQuery({
+      queryKey: ['admin-tv-show-detail', selectedTvId],
+      queryFn: () => getAdminTVShowDetail(selectedTvId as number, token as string),
+      enabled: !!token && selectedTvId != null,
+   });
+
+   // Fallback: fetch seasons from TMDB when TV show is not in local DB
+   const { data: tmdbSeasons, isLoading: isLoadingTmdbSeasons } = useQuery({
+      queryKey: ['admin-tmdb-tv-seasons', selectedTvId],
+      queryFn: () => getTmdbTVSeasons(selectedTvId as number, token as string),
+      enabled: !!token && selectedTvId != null && !tvDetail && !isLoadingTvDetail,
+   });
+
+   const tvSeasons = useMemo<readonly AdminSeasonItem[]>(() => {
+      const seasons = tvDetail?.seasons ?? tmdbSeasons?.seasons ?? [];
+      return seasons
+         .filter((s) => s.seasonNumber > 0)
+         .sort((a, b) => a.seasonNumber - b.seasonNumber);
+   }, [tvDetail?.seasons, tmdbSeasons?.seasons]);
+
+   const selectedSeasonInfo = useMemo(
+      () => tvSeasons.find((s) => s.seasonNumber === Number(search.season)) ?? null,
+      [tvSeasons, search.season],
+   );
+
+   const episodeOptions = useMemo(
+      () =>
+         selectedSeasonInfo
+            ? Array.from({ length: selectedSeasonInfo.episodeCount }, (_, i) => i + 1)
+            : [],
+      [selectedSeasonInfo],
+   );
+
    const createMutation = useMutation({
       mutationFn: (payload: CreateVideoSourceData) =>
          createAdminVideoSource(payload, token as string),
@@ -194,7 +273,78 @@ export default function AdminVideoSourcesPage() {
       },
    });
 
+   const createSeasonMutation = useMutation({
+      mutationFn: (payload: { tvShowId: number; data: CreateTVSeasonData }) =>
+         createAdminTVSeason(payload.tvShowId, payload.data, token as string),
+      onSuccess: () => {
+         if (selectedTvId != null) {
+            queryClient.invalidateQueries({ queryKey: ['admin-tv-show-detail', selectedTvId] });
+         }
+         setIsSeasonDialogOpen(false);
+         setSeasonForm({ name: '', seasonNumber: '1', episodeCount: '1' });
+      },
+   });
+
    // ─── Handlers ──────────────────────────────────────────────
+
+   const handleMediaTypeChange = useCallback((value: string) => {
+      const mediaType = value as 'movie' | 'tv';
+      setSearch((prev) => ({ ...prev, mediaType, mediaId: '', season: '', episode: '' }));
+      setSelectedMedia(null);
+      setTitleSearch('');
+   }, []);
+
+   const handleSelectMovie = useCallback((item: TmdbMovieSearchResult) => {
+      setSelectedMedia({ type: 'movie', item });
+      setSearch((prev) => ({ ...prev, mediaId: String(item.id) }));
+      setTitleSearch('');
+   }, []);
+
+   const handleSelectTv = useCallback((item: TmdbTvSearchResult) => {
+      setSelectedMedia({ type: 'tv', item });
+      setSearch((prev) => ({ ...prev, mediaId: String(item.id), season: '', episode: '' }));
+      setTitleSearch('');
+   }, []);
+
+   const handleClearMedia = useCallback(() => {
+      setSelectedMedia(null);
+      setSearch((prev) => ({ ...prev, mediaId: '', season: '', episode: '' }));
+   }, []);
+
+   const handleSeasonChange = useCallback((value: string) => {
+      setSearch((prev) => ({ ...prev, season: value, episode: '' }));
+   }, []);
+
+   const handleEpisodeSelect = useCallback((ep: number) => {
+      setSearch((prev) => ({ ...prev, episode: String(ep) }));
+   }, []);
+
+   const handleOpenSeasonDialog = useCallback(() => {
+      const nextNumber =
+         tvSeasons.length > 0 ? Math.max(...tvSeasons.map((s) => s.seasonNumber)) + 1 : 1;
+      setSeasonForm({
+         name: `Season ${nextNumber}`,
+         seasonNumber: String(nextNumber),
+         episodeCount: '1',
+      });
+      setIsSeasonDialogOpen(true);
+   }, [tvSeasons]);
+
+   const handleCreateSeason = useCallback(
+      (e: FormEvent) => {
+         e.preventDefault();
+         if (selectedTvId == null) return;
+         const seasonNumber = Number(seasonForm.seasonNumber);
+         const episodeCount = Number(seasonForm.episodeCount);
+         if (!seasonForm.name.trim() || seasonNumber < 1 || episodeCount < 0) return;
+
+         createSeasonMutation.mutate({
+            tvShowId: selectedTvId,
+            data: { name: seasonForm.name.trim(), seasonNumber, episodeCount },
+         });
+      },
+      [selectedTvId, seasonForm, createSeasonMutation],
+   );
 
    const handleSearch = useCallback(
       (e: FormEvent) => {
@@ -283,68 +433,275 @@ export default function AdminVideoSourcesPage() {
          {/* Search Form */}
          <form
             onSubmit={handleSearch}
-            className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4"
+            className="space-y-4 rounded-lg border border-border bg-card p-4"
          >
-            <div className="space-y-1">
-               <span className="text-xs font-medium text-muted-foreground">Loại</span>
-               <Select
-                  value={search.mediaType}
-                  onValueChange={(v) =>
-                     setSearch((prev) => ({ ...prev, mediaType: v as 'movie' | 'tv' }))
-                  }
-               >
-                  <SelectTrigger className="w-32">
-                     <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                     <SelectItem value="movie">Phim lẻ</SelectItem>
-                     <SelectItem value="tv">Phim bộ</SelectItem>
-                  </SelectContent>
-               </Select>
+            {/* Row 1: media type + search/selected media */}
+            <div className="flex flex-wrap items-start gap-3">
+               <div className="space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground">Loại</span>
+                  <Select value={search.mediaType} onValueChange={handleMediaTypeChange}>
+                     <SelectTrigger className="w-32">
+                        <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="movie">
+                           <span className="flex items-center gap-1.5">
+                              <Film className="size-3.5" /> Phim lẻ
+                           </span>
+                        </SelectItem>
+                        <SelectItem value="tv">
+                           <span className="flex items-center gap-1.5">
+                              <Tv className="size-3.5" /> Phim bộ
+                           </span>
+                        </SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
+
+               {/* Media picker — search input or selected card */}
+               <div className="min-w-0 flex-1 space-y-1">
+                  <span className="text-xs font-medium text-muted-foreground">Chọn phim</span>
+                  {selectedMedia ? (
+                     <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
+                        <SearchResultPoster
+                           posterPath={selectedMedia.item.posterPath}
+                           alt={
+                              selectedMedia.type === 'movie'
+                                 ? selectedMedia.item.title
+                                 : selectedMedia.item.name
+                           }
+                        />
+                        <div className="min-w-0 flex-1">
+                           <p className="truncate text-sm font-medium">
+                              {selectedMedia.type === 'movie'
+                                 ? selectedMedia.item.title
+                                 : selectedMedia.item.name}
+                           </p>
+                           <p className="text-xs text-muted-foreground">
+                              ID: {selectedMedia.item.id}
+                              {selectedMedia.type === 'movie'
+                                 ? selectedMedia.item.releaseDate
+                                    ? ` • ${selectedMedia.item.releaseDate.slice(0, 4)}`
+                                    : ''
+                                 : selectedMedia.item.firstAirDate
+                                   ? ` • ${selectedMedia.item.firstAirDate.slice(0, 4)}`
+                                   : ''}
+                           </p>
+                        </div>
+                        <Button
+                           type="button"
+                           variant="ghost"
+                           size="sm"
+                           className="shrink-0"
+                           onClick={handleClearMedia}
+                        >
+                           <X className="size-3.5" />
+                           <span className="sr-only">Đổi phim</span>
+                        </Button>
+                     </div>
+                  ) : (
+                     <div className="relative">
+                        <div className="relative">
+                           <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                           <Input
+                              placeholder={
+                                 search.mediaType === 'movie'
+                                    ? 'Tìm theo tên phim: Fight Club, Inception...'
+                                    : 'Tìm theo tên phim bộ: Breaking Bad...'
+                              }
+                              value={titleSearch}
+                              onChange={(e) => setTitleSearch(e.target.value)}
+                              className="pl-8"
+                           />
+                        </div>
+                        {debouncedTitleSearch.length >= 2 && (
+                           <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
+                              {isSearchingTitle ? (
+                                 <div className="flex items-center justify-center py-4">
+                                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                                 </div>
+                              ) : titleSearchResults && titleSearchResults.length > 0 ? (
+                                 <div className="max-h-64 overflow-y-auto">
+                                    {search.mediaType === 'movie'
+                                       ? (titleSearchResults as TmdbMovieSearchResult[]).map(
+                                            (item) => (
+                                               <button
+                                                  key={item.id}
+                                                  type="button"
+                                                  className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent"
+                                                  onClick={() => handleSelectMovie(item)}
+                                               >
+                                                  <SearchResultPoster
+                                                     posterPath={item.posterPath}
+                                                     alt={item.title}
+                                                  />
+                                                  <div className="min-w-0 flex-1">
+                                                     <p className="truncate text-sm font-medium">
+                                                        {item.title}
+                                                     </p>
+                                                     <p className="text-xs text-muted-foreground">
+                                                        ID: {item.id}
+                                                        {item.releaseDate
+                                                           ? ` • ${item.releaseDate.slice(0, 4)}`
+                                                           : ''}
+                                                     </p>
+                                                  </div>
+                                               </button>
+                                            ),
+                                         )
+                                       : (titleSearchResults as TmdbTvSearchResult[]).map(
+                                            (item) => (
+                                               <button
+                                                  key={item.id}
+                                                  type="button"
+                                                  className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent"
+                                                  onClick={() => handleSelectTv(item)}
+                                               >
+                                                  <SearchResultPoster
+                                                     posterPath={item.posterPath}
+                                                     alt={item.name}
+                                                  />
+                                                  <div className="min-w-0 flex-1">
+                                                     <p className="truncate text-sm font-medium">
+                                                        {item.name}
+                                                     </p>
+                                                     <p className="text-xs text-muted-foreground">
+                                                        ID: {item.id}
+                                                        {item.firstAirDate
+                                                           ? ` • ${item.firstAirDate.slice(0, 4)}`
+                                                           : ''}
+                                                     </p>
+                                                  </div>
+                                               </button>
+                                            ),
+                                         )}
+                                 </div>
+                              ) : (
+                                 <p className="py-4 text-center text-sm text-muted-foreground">
+                                    Không tìm thấy kết quả
+                                 </p>
+                              )}
+                           </div>
+                        )}
+                     </div>
+                  )}
+               </div>
             </div>
-            <div className="space-y-1">
-               <span className="text-xs font-medium text-muted-foreground">TMDB ID</span>
-               <Input
-                  type="number"
-                  placeholder="VD: 550"
-                  value={search.mediaId}
-                  onChange={(e) => setSearch((prev) => ({ ...prev, mediaId: e.target.value }))}
-                  className="w-32"
-                  min={1}
-               />
-            </div>
+
+            {/* Season & Episode picker (TV only) */}
             {search.mediaType === 'tv' && (
-               <>
-                  <div className="space-y-1">
-                     <span className="text-xs font-medium text-muted-foreground">Mùa</span>
-                     <Input
-                        type="number"
-                        placeholder="VD: 1"
-                        value={search.season}
-                        onChange={(e) => setSearch((prev) => ({ ...prev, season: e.target.value }))}
-                        className="w-24"
-                        min={0}
-                     />
-                  </div>
-                  <div className="space-y-1">
-                     <span className="text-xs font-medium text-muted-foreground">Tập</span>
-                     <Input
-                        type="number"
-                        placeholder="VD: 1"
-                        value={search.episode}
-                        onChange={(e) =>
-                           setSearch((prev) => ({ ...prev, episode: e.target.value }))
-                        }
-                        className="w-24"
-                        min={0}
-                     />
-                  </div>
-               </>
+               <div className="space-y-3 rounded-md border border-border bg-muted/30 p-3">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                     Chọn mùa &amp; tập
+                  </h3>
+
+                  {!selectedMedia ? (
+                     <p className="text-sm text-muted-foreground">Hãy chọn phim bộ ở trên trước.</p>
+                  ) : isLoadingTvDetail || isLoadingTmdbSeasons ? (
+                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="size-4 animate-spin" />
+                        Đang tải danh sách mùa…
+                     </div>
+                  ) : tvSeasons.length === 0 ? (
+                     <div className="flex items-center gap-3">
+                        <p className="text-sm text-muted-foreground">
+                           Không tìm thấy mùa nào cho phim này.
+                        </p>
+                        <Button
+                           type="button"
+                           size="sm"
+                           variant="outline"
+                           onClick={handleOpenSeasonDialog}
+                        >
+                           <Plus className="mr-1.5 size-3.5" />
+                           Tạo mùa nhanh
+                        </Button>
+                     </div>
+                  ) : (
+                     <>
+                        {/* Season Select */}
+                        <div className="space-y-1">
+                           <span className="text-xs font-medium text-muted-foreground">Mùa</span>
+                           <div className="flex items-center gap-2">
+                              <Select value={search.season} onValueChange={handleSeasonChange}>
+                                 <SelectTrigger className="w-64">
+                                    <SelectValue placeholder="Chọn mùa…" />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                    {tvSeasons.map((s) => (
+                                       <SelectItem key={s.id} value={String(s.seasonNumber)}>
+                                          Mùa {s.seasonNumber} — {s.name}
+                                          <span className="ml-1 text-xs text-muted-foreground">
+                                             ({s.episodeCount} tập)
+                                          </span>
+                                       </SelectItem>
+                                    ))}
+                                 </SelectContent>
+                              </Select>
+                              <Button
+                                 type="button"
+                                 variant="outline"
+                                 size="sm"
+                                 className="h-9 px-2"
+                                 onClick={handleOpenSeasonDialog}
+                                 title="Tạo mùa mới"
+                              >
+                                 <Plus className="size-4" />
+                              </Button>
+                           </div>
+                        </div>
+
+                        {/* Episode grid */}
+                        {selectedSeasonInfo && (
+                           <div className="space-y-1.5">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                 Tập ({selectedSeasonInfo.episodeCount} tập)
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                 {episodeOptions.map((ep) => (
+                                    <Button
+                                       key={ep}
+                                       type="button"
+                                       variant={
+                                          Number(search.episode) === ep ? 'default' : 'outline'
+                                       }
+                                       size="sm"
+                                       className="h-8 w-10 text-xs"
+                                       onClick={() => handleEpisodeSelect(ep)}
+                                    >
+                                       {ep}
+                                    </Button>
+                                 ))}
+                              </div>
+                           </div>
+                        )}
+
+                        {/* Selection summary */}
+                        {search.season && search.episode && (
+                           <p className="text-xs text-muted-foreground">
+                              Đang tìm nguồn phát cho:{' '}
+                              <span className="font-medium text-foreground">
+                                 Mùa {search.season}, Tập {search.episode}
+                              </span>
+                           </p>
+                        )}
+                     </>
+                  )}
+               </div>
             )}
-            <Button type="submit" size="sm" disabled={!search.mediaId.trim()}>
-               <Search className="mr-1.5 size-3.5" />
-               Tìm nguồn phát
-            </Button>
+
+            {/* Submit */}
+            <div className="flex items-center gap-2">
+               <Button type="submit" size="sm" disabled={!search.mediaId.trim()}>
+                  <Search className="mr-1.5 size-3.5" />
+                  Tìm nguồn phát
+               </Button>
+               {!selectedMedia && !titleSearch && (
+                  <p className="text-xs text-muted-foreground">
+                     Gõ tên phim để tìm kiếm, hoặc nhập TMDB ID trực tiếp
+                  </p>
+               )}
+            </div>
          </form>
 
          {/* Results */}
@@ -354,10 +711,20 @@ export default function AdminVideoSourcesPage() {
                   <div className="flex items-center gap-2">
                      <Video className="size-5 text-primary" />
                      <h2 className="text-lg font-semibold">
-                        {activeSearch.mediaType === 'movie' ? 'Phim lẻ' : 'Phim bộ'} #
-                        {activeSearch.mediaId}
+                        {selectedMedia != null ? (
+                           selectedMedia.type === 'movie' ? (
+                              selectedMedia.item.title
+                           ) : (
+                              selectedMedia.item.name
+                           )
+                        ) : (
+                           <>
+                              {activeSearch.mediaType === 'movie' ? 'Phim lẻ' : 'Phim bộ'} #
+                              {activeSearch.mediaId}
+                           </>
+                        )}
                         {activeSearch.mediaType === 'tv' && activeSearch.season && (
-                           <span className="text-muted-foreground">
+                           <span className="font-normal text-muted-foreground">
                               {' '}
                               — Mùa {activeSearch.season}
                               {activeSearch.episode && `, Tập ${activeSearch.episode}`}
@@ -488,6 +855,104 @@ export default function AdminVideoSourcesPage() {
             description={`Xác nhận xóa nguồn "${deleteTarget?.label || deleteTarget?.sourceUrl}"? Hành động này không thể hoàn tác.`}
             isLoading={deleteMutation.isPending}
          />
+
+         {/* Create Season Dialog */}
+         <Dialog
+            open={isSeasonDialogOpen}
+            onOpenChange={(open) => !open && setIsSeasonDialogOpen(false)}
+         >
+            <DialogContent className="sm:max-w-sm">
+               <DialogHeader>
+                  <DialogTitle>Tạo mùa mới</DialogTitle>
+                  <DialogDescription>Thêm mùa mới cho phim bộ đã chọn.</DialogDescription>
+               </DialogHeader>
+               <form onSubmit={handleCreateSeason} className="space-y-4">
+                  <div className="space-y-1">
+                     <span className="text-sm font-medium">Tên mùa</span>
+                     <Input
+                        value={seasonForm.name}
+                        onChange={(e) =>
+                           setSeasonForm((prev) => ({ ...prev, name: e.target.value }))
+                        }
+                        placeholder="VD: Season 1"
+                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                     <div className="space-y-1">
+                        <span className="text-sm font-medium">Số mùa</span>
+                        <Input
+                           type="number"
+                           min={1}
+                           value={seasonForm.seasonNumber}
+                           onChange={(e) =>
+                              setSeasonForm((prev) => ({
+                                 ...prev,
+                                 seasonNumber: e.target.value,
+                              }))
+                           }
+                        />
+                     </div>
+                     <div className="space-y-1">
+                        <span className="text-sm font-medium">Số tập</span>
+                        <Input
+                           type="number"
+                           min={0}
+                           value={seasonForm.episodeCount}
+                           onChange={(e) =>
+                              setSeasonForm((prev) => ({
+                                 ...prev,
+                                 episodeCount: e.target.value,
+                              }))
+                           }
+                        />
+                     </div>
+                  </div>
+                  <DialogFooter>
+                     <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsSeasonDialogOpen(false)}
+                     >
+                        Hủy
+                     </Button>
+                     <Button type="submit" disabled={createSeasonMutation.isPending}>
+                        {createSeasonMutation.isPending && (
+                           <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                        )}
+                        Tạo mùa
+                     </Button>
+                  </DialogFooter>
+               </form>
+            </DialogContent>
+         </Dialog>
+      </div>
+   );
+}
+
+// ─── Search result poster ────────────────────────────────────
+
+function SearchResultPoster({
+   posterPath,
+   alt,
+}: {
+   readonly posterPath: string | null;
+   readonly alt: string;
+}) {
+   if (posterPath) {
+      return (
+         <Image
+            src={`${IMAGE_SIZES.poster.small}${posterPath}`}
+            alt={alt}
+            width={28}
+            height={42}
+            className="shrink-0 rounded object-cover"
+            style={{ height: 'auto' }}
+         />
+      );
+   }
+   return (
+      <div className="flex h-[42px] w-7 shrink-0 items-center justify-center rounded bg-muted">
+         <Film className="size-4 text-muted-foreground" />
       </div>
    );
 }

@@ -16,6 +16,7 @@ import {
    Layers,
    Loader2,
    MonitorPlay,
+   Pencil,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -27,11 +28,17 @@ import {
    createAdminTVShowVideo,
    addAdminTVShowCast,
    removeAdminTVShowCast,
+   createAdminTVSeason,
+   updateAdminTVSeason,
+   deleteAdminTVSeason,
 } from '@/services/admin-dashboard-service';
 import type {
    UpdateTVShowData,
    CreateVideoData,
    AddCastData,
+   CreateTVSeasonData,
+   UpdateTVSeasonData,
+   AdminSeasonItem,
 } from '@/services/admin-dashboard-service';
 import { useAuthStore } from '@/store/auth-store';
 import { IMAGE_SIZES } from '@/constants';
@@ -52,6 +59,7 @@ import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { CreateVideoDialog } from '@/components/admin/create-video-dialog';
 import { AddCastDialog } from '@/components/admin/add-cast-dialog';
 import { VideoSourcesTab } from '@/components/admin/video-sources-tab';
+import { CreateSeasonDialog, EditSeasonDialog } from '@/components/admin/season-dialog';
 
 /** TV show edit form fields */
 interface TVShowFormState {
@@ -116,6 +124,8 @@ export default function AdminTVShowDetailPage() {
       id: string;
       name: string;
    } | null>(null);
+   const [editSeasonTarget, setEditSeasonTarget] = useState<AdminSeasonItem | null>(null);
+   const [deleteSeasonTarget, setDeleteSeasonTarget] = useState<AdminSeasonItem | null>(null);
 
    const { data, isLoading } = useQuery({
       queryKey: ['admin-tv-detail', tvShowId],
@@ -169,6 +179,34 @@ export default function AdminTVShowDetailPage() {
          queryClient.invalidateQueries({ queryKey: ['admin-tv-detail', tvShowId] });
          queryClient.invalidateQueries({ queryKey: ['admin-tv-shows'] });
          setDeleteCastTarget(null);
+      },
+   });
+
+   const createSeasonMutation = useMutation({
+      mutationFn: (data: CreateTVSeasonData) =>
+         createAdminTVSeason(tvShowId, data, token as string),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['admin-tv-detail', tvShowId] });
+         queryClient.invalidateQueries({ queryKey: ['admin-tv-shows'] });
+      },
+   });
+
+   const updateSeasonMutation = useMutation({
+      mutationFn: ({ seasonId, data }: { seasonId: number; data: UpdateTVSeasonData }) =>
+         updateAdminTVSeason(tvShowId, seasonId, data, token as string),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['admin-tv-detail', tvShowId] });
+         queryClient.invalidateQueries({ queryKey: ['admin-tv-shows'] });
+         setEditSeasonTarget(null);
+      },
+   });
+
+   const deleteSeasonMutation = useMutation({
+      mutationFn: (seasonId: number) => deleteAdminTVSeason(tvShowId, seasonId, token as string),
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['admin-tv-detail', tvShowId] });
+         queryClient.invalidateQueries({ queryKey: ['admin-tv-shows'] });
+         setDeleteSeasonTarget(null);
       },
    });
 
@@ -421,6 +459,7 @@ export default function AdminTVShowDetailPage() {
                                           width={32}
                                           height={48}
                                           className="rounded object-cover"
+                                          style={{ height: 'auto' }}
                                        />
                                     ) : (
                                        <div className="flex h-12 w-8 items-center justify-center rounded bg-muted text-xs text-muted-foreground">
@@ -473,6 +512,15 @@ export default function AdminTVShowDetailPage() {
 
             {/* Seasons Tab */}
             <TabsContent value="seasons">
+               <div className="mb-4 flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">{data.seasons.length} mùa</p>
+                  <CreateSeasonDialog
+                     mediaTitle={data.name}
+                     onSubmit={(seasonData) => createSeasonMutation.mutate(seasonData)}
+                     isPending={createSeasonMutation.isPending}
+                     isSuccess={createSeasonMutation.isSuccess}
+                  />
+               </div>
                <div className="rounded-lg border border-border bg-card">
                   <Table>
                      <TableHeader>
@@ -481,6 +529,7 @@ export default function AdminTVShowDetailPage() {
                            <TableHead>Tên</TableHead>
                            <TableHead className="hidden sm:table-cell">Số tập</TableHead>
                            <TableHead className="hidden md:table-cell">Ngày phát sóng</TableHead>
+                           <TableHead className="w-24 text-right">Thao tác</TableHead>
                         </TableRow>
                      </TableHeader>
                      <TableBody>
@@ -497,12 +546,31 @@ export default function AdminTVShowDetailPage() {
                                  <TableCell className="hidden text-muted-foreground md:table-cell">
                                     {s.airDate || '—'}
                                  </TableCell>
+                                 <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                       <Button
+                                          variant="ghost"
+                                          size="icon-xs"
+                                          onClick={() => setEditSeasonTarget(s)}
+                                       >
+                                          <Pencil className="h-3 w-3" />
+                                       </Button>
+                                       <Button
+                                          variant="ghost"
+                                          size="icon-xs"
+                                          onClick={() => setDeleteSeasonTarget(s)}
+                                          className="text-destructive hover:text-destructive"
+                                       >
+                                          <Trash2 className="h-3 w-3" />
+                                       </Button>
+                                    </div>
+                                 </TableCell>
                               </TableRow>
                            ))
                         ) : (
                            <TableRow>
                               <TableCell
-                                 colSpan={4}
+                                 colSpan={5}
                                  className="py-8 text-center text-muted-foreground"
                               >
                                  Chưa có thông tin mùa
@@ -631,6 +699,34 @@ export default function AdminTVShowDetailPage() {
             title="Xóa diễn viên"
             description={`Bạn có chắc muốn xóa "${deleteCastTarget?.name}" khỏi danh sách diễn viên? Hành động này không thể hoàn tác.`}
             isLoading={removeCastMutation.isPending}
+         />
+
+         {/* Edit Season Dialog */}
+         {editSeasonTarget && (
+            <EditSeasonDialog
+               season={editSeasonTarget}
+               isOpen={!!editSeasonTarget}
+               onClose={() => setEditSeasonTarget(null)}
+               onSubmit={(seasonData) =>
+                  updateSeasonMutation.mutate({
+                     seasonId: editSeasonTarget.id,
+                     data: seasonData,
+                  })
+               }
+               isPending={updateSeasonMutation.isPending}
+            />
+         )}
+
+         {/* Delete Season Confirm */}
+         <ConfirmDialog
+            isOpen={!!deleteSeasonTarget}
+            onClose={() => setDeleteSeasonTarget(null)}
+            onConfirm={() =>
+               deleteSeasonTarget && deleteSeasonMutation.mutate(deleteSeasonTarget.id)
+            }
+            title="Xóa mùa"
+            description={`Bạn có chắc muốn xóa "${deleteSeasonTarget?.name}"? Hành động này không thể hoàn tác.`}
+            isLoading={deleteSeasonMutation.isPending}
          />
       </div>
    );
