@@ -58,6 +58,8 @@ interface MovieFormState {
    title: string;
    overview: string;
    tagline: string;
+   posterPath: string;
+   backdropPath: string;
    status: string;
    releaseDate: string;
    voteAverage: string;
@@ -68,6 +70,8 @@ function buildInitialForm(data: {
    title: string;
    overview: string;
    tagline: string;
+   posterPath: string | null;
+   backdropPath: string | null;
    status: string;
    releaseDate: string;
    voteAverage: number;
@@ -77,6 +81,8 @@ function buildInitialForm(data: {
       title: data.title,
       overview: data.overview,
       tagline: data.tagline,
+      posterPath: data.posterPath ?? '',
+      backdropPath: data.backdropPath ?? '',
       status: data.status,
       releaseDate: data.releaseDate,
       voteAverage: String(data.voteAverage),
@@ -89,6 +95,8 @@ function buildUpdatePayload(form: MovieFormState): UpdateMovieData {
       title: form.title || undefined,
       overview: form.overview,
       tagline: form.tagline,
+      posterPath: form.posterPath || undefined,
+      backdropPath: form.backdropPath || undefined,
       status: form.status || undefined,
       releaseDate: form.releaseDate,
       voteAverage: form.voteAverage ? Number(form.voteAverage) : undefined,
@@ -347,6 +355,44 @@ export default function AdminMovieDetailPage() {
                               value={form.overview}
                               onChange={(e) => handleFormChange('overview', e.target.value)}
                            />
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-sm font-medium text-foreground">Ảnh poster</label>
+                           <Input
+                              value={form.posterPath}
+                              onChange={(e) => handleFormChange('posterPath', e.target.value)}
+                              placeholder="/abc123.jpg"
+                           />
+                           {form.posterPath && (
+                              <div className="relative h-[150px] w-[100px] overflow-hidden rounded-md border border-border">
+                                 <Image
+                                    src={`${IMAGE_SIZES.poster.small}${form.posterPath}`}
+                                    alt="Poster preview"
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                 />
+                              </div>
+                           )}
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-sm font-medium text-foreground">Ảnh nền</label>
+                           <Input
+                              value={form.backdropPath}
+                              onChange={(e) => handleFormChange('backdropPath', e.target.value)}
+                              placeholder="/abc123.jpg"
+                           />
+                           {form.backdropPath && (
+                              <div className="relative h-[100px] w-full overflow-hidden rounded-md border border-border">
+                                 <Image
+                                    src={`${IMAGE_SIZES.backdrop.small}${form.backdropPath}`}
+                                    alt="Backdrop preview"
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                 />
+                              </div>
+                           )}
                         </div>
                      </div>
                      <div className="mt-4 flex justify-end">
