@@ -217,6 +217,7 @@ function PersonAvatar({ person, size = 'md' }: PersonAvatarProps) {
             width={dimensions.w}
             height={dimensions.h}
             className="rounded object-cover"
+            style={{ height: 'auto' }}
          />
       );
    }

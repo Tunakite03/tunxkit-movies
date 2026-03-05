@@ -106,7 +106,7 @@ function WelcomeHeader({ userName }: { readonly userName: string | null }) {
          initial={{ opacity: 0, y: -10 }}
          animate={{ opacity: 1, y: 0 }}
          transition={{ duration: 0.4 }}
-         className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-r from-primary/5 via-card to-primary/5 p-6"
+         className="relative overflow-hidden rounded-xl border border-border bg-linear-to-r from-primary/5 via-card to-primary/5 p-6"
       >
          {/* Decorative gradient blob */}
          <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-primary/5 blur-3xl" />

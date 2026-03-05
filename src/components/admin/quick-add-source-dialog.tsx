@@ -17,15 +17,19 @@ import {
 } from '@/components/ui/dialog';
 import {
    createAdminVideoSource,
+   createAdminTVSeason,
    getAdminTVShowDetail,
+   getTmdbTVSeasons,
    searchTmdbMovies,
    searchTmdbTv,
 } from '@/services/admin-dashboard-service';
 import type {
    CreateVideoSourceData,
+   CreateTVSeasonData,
    TmdbMovieSearchResult,
    TmdbTvSearchResult,
 } from '@/services/admin-dashboard-service';
+import { CreateSeasonDialog } from '@/components/admin/season-dialog';
 import { useAuthStore } from '@/store/auth-store';
 import { useDebounce } from '@/hooks';
 import { IMAGE_SIZES } from '@/constants';
@@ -128,11 +132,7 @@ export function QuickAddSourceDialog({
    const searchResults = form.mediaType === 'movie' ? movieResults?.results : tvResults?.results;
    const isSearching = form.mediaType === 'movie' ? isSearchingMovies : isSearchingTv;
 
-   const {
-      data: tvShowDetail,
-      isLoading: isLoadingTvDetail,
-      isError: isTvDetailError,
-   } = useQuery({
+   const { data: tvShowDetail, isLoading: isLoadingTvDetail } = useQuery({
       queryKey: ['admin-tv-show-detail', selectedTvId],
       queryFn: async () => {
          if (selectedTvId == null) {
@@ -143,13 +143,19 @@ export function QuickAddSourceDialog({
       enabled: !!token && selectedTvId != null,
    });
 
-   const tvSeasons = useMemo(
-      () =>
-         (tvShowDetail?.seasons ?? [])
-            .filter((season) => season.seasonNumber > 0)
-            .sort((a, b) => a.seasonNumber - b.seasonNumber),
-      [tvShowDetail?.seasons],
-   );
+   // Fallback: fetch seasons from TMDB when TV show is not in local DB
+   const { data: tmdbSeasons, isLoading: isLoadingTmdbSeasons } = useQuery({
+      queryKey: ['admin-tmdb-tv-seasons', selectedTvId],
+      queryFn: () => getTmdbTVSeasons(selectedTvId as number, token as string),
+      enabled: !!token && selectedTvId != null && !tvShowDetail && !isLoadingTvDetail,
+   });
+
+   const tvSeasons = useMemo(() => {
+      const seasons = tvShowDetail?.seasons ?? tmdbSeasons?.seasons ?? [];
+      return seasons
+         .filter((season) => season.seasonNumber > 0)
+         .sort((a, b) => a.seasonNumber - b.seasonNumber);
+   }, [tvShowDetail?.seasons, tmdbSeasons?.seasons]);
 
    const selectedSeasonInfo = useMemo(() => {
       const seasonNumber = Number(form.season);
@@ -224,6 +230,19 @@ export function QuickAddSourceDialog({
       setForm((prev) => ({ ...prev, mediaId: String(item.id), season: '', episode: '' }));
       setSearchQuery('');
    }, []);
+
+   const createSeasonMutation = useMutation({
+      mutationFn: (data: CreateTVSeasonData) => {
+         if (selectedTvId == null) {
+            throw new Error('TV show ID is required');
+         }
+         return createAdminTVSeason(selectedTvId, data, token as string);
+      },
+      onSuccess: () => {
+         queryClient.invalidateQueries({ queryKey: ['admin-tv-show-detail', selectedTvId] });
+         queryClient.invalidateQueries({ queryKey: ['admin-tmdb-tv-seasons', selectedTvId] });
+      },
+   });
 
    const createMutation = useMutation({
       mutationFn: (data: CreateVideoSourceData) => createAdminVideoSource(data, token as string),
@@ -386,7 +405,7 @@ export function QuickAddSourceDialog({
                                           <button
                                              key={item.id}
                                              type="button"
-                                             className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent"
+                                             className="flex w-full items-center gap-3 overflow-hidden px-3 py-2 text-left transition-colors hover:bg-accent"
                                              onClick={() => handleSelectMovie(item)}
                                           >
                                              <MediaPosterItem
@@ -394,7 +413,7 @@ export function QuickAddSourceDialog({
                                                 alt={item.title}
                                              />
                                              <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-medium">
+                                                <p className="line-clamp-2 text-sm font-medium">
                                                    {item.title}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
@@ -408,7 +427,7 @@ export function QuickAddSourceDialog({
                                           <button
                                              key={item.id}
                                              type="button"
-                                             className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-accent"
+                                             className="flex w-full items-center gap-3 overflow-hidden px-3 py-2 text-left transition-colors hover:bg-accent"
                                              onClick={() => handleSelectTv(item)}
                                           >
                                              <MediaPosterItem
@@ -416,7 +435,7 @@ export function QuickAddSourceDialog({
                                                 alt={item.name}
                                              />
                                              <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-medium">
+                                                <p className="line-clamp-2 text-sm font-medium">
                                                    {item.name}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
@@ -448,11 +467,14 @@ export function QuickAddSourceDialog({
                                  value={form.season}
                                  onChange={(e) => handleChange('season', e.target.value)}
                                  disabled={
-                                    !selectedTvId || isLoadingTvDetail || tvSeasons.length === 0
+                                    !selectedTvId ||
+                                    isLoadingTvDetail ||
+                                    isLoadingTmdbSeasons ||
+                                    tvSeasons.length === 0
                                  }
                               >
                                  <option value="">
-                                    {isLoadingTvDetail
+                                    {isLoadingTvDetail || isLoadingTmdbSeasons
                                        ? 'Đang tải season...'
                                        : !selectedTvId
                                          ? 'Chọn phim bộ trước'
@@ -490,12 +512,25 @@ export function QuickAddSourceDialog({
                               </select>
                            </div>
                         </div>
-                        {isTvDetailError && (
-                           <p className="text-xs text-destructive">
-                              Không tải được season/episode. Vui lòng kiểm tra phim bộ đã được
-                              import.
-                           </p>
-                        )}
+
+                        {/* Add season button when no seasons */}
+                        {selectedTvId != null &&
+                           !isLoadingTvDetail &&
+                           !isLoadingTmdbSeasons &&
+                           tvSeasons.length === 0 && (
+                              <div className="col-span-full">
+                                 <CreateSeasonDialog
+                                    mediaTitle={
+                                       selectedMedia?.type === 'tv'
+                                          ? selectedMedia.item.name
+                                          : (prefillMediaTitle ?? `TV #${selectedTvId}`)
+                                    }
+                                    onSubmit={(data) => createSeasonMutation.mutate(data)}
+                                    isPending={createSeasonMutation.isPending}
+                                    isSuccess={createSeasonMutation.isSuccess}
+                                 />
+                              </div>
+                           )}
                      </div>
                   )}
 
@@ -645,6 +680,7 @@ function MediaPosterItem({
             width={size.w}
             height={size.h}
             className="shrink-0 rounded object-cover"
+            style={{ height: 'auto' }}
          />
       );
    }

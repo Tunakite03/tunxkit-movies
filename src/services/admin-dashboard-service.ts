@@ -599,6 +599,59 @@ export function updateAdminTVShow(
    });
 }
 
+export interface CreateTVSeasonData {
+   readonly name: string;
+   readonly seasonNumber: number;
+   readonly episodeCount: number;
+   readonly airDate?: string;
+}
+
+export interface UpdateTVSeasonData {
+   readonly name?: string;
+   readonly seasonNumber?: number;
+   readonly episodeCount?: number;
+   readonly airDate?: string;
+}
+
+/** Quick-create a season for a TV show */
+export function createAdminTVSeason(
+   tvShowId: number,
+   data: CreateTVSeasonData,
+   token: string,
+): Promise<{ message: string; id: number }> {
+   return fetchAPI<{ message: string; id: number }>(`/admin/tv-shows/${tvShowId}/seasons`, {
+      method: 'POST',
+      body: data,
+      token,
+   });
+}
+
+/** Update a TV season */
+export function updateAdminTVSeason(
+   tvShowId: number,
+   seasonId: number,
+   data: UpdateTVSeasonData,
+   token: string,
+): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/tv-shows/${tvShowId}/seasons/${seasonId}`, {
+      method: 'PATCH',
+      body: data,
+      token,
+   });
+}
+
+/** Delete a TV season */
+export function deleteAdminTVSeason(
+   tvShowId: number,
+   seasonId: number,
+   token: string,
+): Promise<{ message: string }> {
+   return fetchAPI<{ message: string }>(`/admin/tv-shows/${tvShowId}/seasons/${seasonId}`, {
+      method: 'DELETE',
+      token,
+   });
+}
+
 // ─── Video Management ───────────────────────────────────────
 
 /** Delete a movie video */
@@ -780,6 +833,20 @@ export function searchTmdbTv(
    return fetchAPI<TmdbSearchResponse<TmdbTvSearchResult>>('/admin/tmdb-search/tv', {
       token,
       params: { q: query, page },
+      cache: 'no-store',
+   });
+}
+
+/** Fetch TV show seasons directly from TMDB (read-only, no DB writes) */
+export interface TmdbTVSeasonsResponse {
+   readonly id: number;
+   readonly name: string;
+   readonly seasons: readonly AdminSeasonItem[];
+}
+
+export function getTmdbTVSeasons(tvShowId: number, token: string): Promise<TmdbTVSeasonsResponse> {
+   return fetchAPI<TmdbTVSeasonsResponse>(`/admin/tmdb-search/tv/${tvShowId}/seasons`, {
+      token,
       cache: 'no-store',
    });
 }
