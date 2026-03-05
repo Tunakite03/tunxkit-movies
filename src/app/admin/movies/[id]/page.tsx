@@ -409,6 +409,7 @@ export default function AdminMovieDetailPage() {
                                           width={32}
                                           height={48}
                                           className="rounded object-cover"
+                                          style={{ height: 'auto' }}
                                        />
                                     ) : (
                                        <div className="flex h-12 w-8 items-center justify-center rounded bg-muted text-xs text-muted-foreground">

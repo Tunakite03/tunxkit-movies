@@ -21,6 +21,7 @@ interface ImportExportActionsProps {
    readonly entityLabel: string;
    readonly onExport: () => Promise<void>;
    readonly onImport: (file: File, mode: ImportMode) => Promise<CsvImportResult>;
+   readonly sampleCsvUrl?: string;
 }
 
 /** Export button + Import dialog for CSV operations */
@@ -28,6 +29,7 @@ export function ImportExportActions({
    entityLabel,
    onExport,
    onImport,
+   sampleCsvUrl,
 }: ImportExportActionsProps) {
    const [isExporting, setIsExporting] = useState(false);
    const [importOpen, setImportOpen] = useState(false);
@@ -91,12 +93,7 @@ export function ImportExportActions({
 
    return (
       <>
-         <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            disabled={isExporting}
-         >
+         <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting}>
             {isExporting ? (
                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
             ) : (
@@ -116,8 +113,18 @@ export function ImportExportActions({
                <DialogHeader>
                   <DialogTitle>Import {entityLabel}</DialogTitle>
                   <DialogDescription>
-                     Tải lên file CSV để import {entityLabel.toLowerCase()}. File cần có header
-                     đúng định dạng (có thể export file mẫu trước).
+                     Tải lên file CSV để import {entityLabel.toLowerCase()}. File cần có header đúng
+                     định dạng.{' '}
+                     {sampleCsvUrl && (
+                        <a
+                           href={sampleCsvUrl}
+                           download
+                           className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+                        >
+                           <Download className="h-3 w-3" />
+                           Tải file CSV mẫu
+                        </a>
+                     )}
                   </DialogDescription>
                </DialogHeader>
 
@@ -148,9 +155,7 @@ export function ImportExportActions({
 
                   {/* Import mode */}
                   <div className="space-y-2">
-                     <label className="text-sm font-medium text-foreground">
-                        Khi trùng ID
-                     </label>
+                     <label className="text-sm font-medium text-foreground">Khi trùng ID</label>
                      <div className="flex gap-2">
                         <Button
                            type="button"
@@ -198,10 +203,7 @@ export function ImportExportActions({
                      {result ? 'Đóng' : 'Hủy'}
                   </Button>
                   {!result && (
-                     <Button
-                        onClick={handleImport}
-                        disabled={!selectedFile || isImporting}
-                     >
+                     <Button onClick={handleImport} disabled={!selectedFile || isImporting}>
                         {isImporting ? (
                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (

@@ -92,6 +92,7 @@ export default function AdminTVShowsPage() {
                      entityLabel="Phim bộ"
                      onExport={handleExport}
                      onImport={handleImport}
+                     sampleCsvUrl="/samples/tv-shows-sample.csv"
                   />
                   <CreateTVShowDialog
                      onSubmit={(data) => createMutation.mutate(data)}
