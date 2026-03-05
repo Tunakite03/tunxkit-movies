@@ -1,14 +1,49 @@
----
-description: Pre-push code review against design docs.
----
+# Code Review
 
-Perform a local code review **before** pushing changes.
+## What to Review
 
-1. **Gather Context** — If not already provided, ask for: feature/branch description, list of modified files, relevant design doc(s) (e.g., `docs/ai/design/feature-{name}.md`), known constraints or risky areas, and which tests have been run. Also review the latest diff via `git status` and `git diff --stat`.
-2. **Use Memory for Context** — Search memory for project review standards and recurring pitfalls: `npx ai-devkit@latest memory search --query "code review checklist project conventions"`.
-3. **Understand Design Alignment** — For each design doc, summarize architectural intent and critical constraints.
-4. **File-by-File Review** — For every modified file: check alignment with design/requirements and flag deviations, spot logic issues/edge cases/redundant code, flag security concerns (input validation, secrets, auth, data handling), check error handling/performance/observability, and identify missing or outdated tests.
-5. **Cross-Cutting Concerns** — Verify naming consistency and project conventions. Confirm docs/comments updated where behavior changed. Identify missing tests (unit, integration, E2E). Check for needed configuration/migration updates.
-6. **Store Reusable Knowledge** — Save durable review findings/checklists with `npx ai-devkit@latest memory store ...`.
-7. **Summarize Findings** — Categorize each finding as **blocking**, **important**, or **nice-to-have** with: file, issue, impact, recommendation, and design reference.
-8. **Next Command Guidance** — If blocking issues remain, return to `/execute-plan` (code fixes) or `/writing-test` (test gaps); if clean, proceed with push/PR workflow.
+- File(s): <file paths or PR link>
+- Context: <what the change is about>
+
+## Review Checklist
+
+Analyze the code for:
+
+### Correctness
+
+- Does the logic handle all cases correctly?
+- Are edge cases handled (null, empty, max/min, concurrent)?
+- Are error paths handled properly?
+
+### Security
+
+- Any hardcoded secrets or credentials?
+- Is user input validated and sanitized?
+- Are there SQL injection, XSS, or path traversal risks?
+
+### Performance
+
+- Any N+1 queries or unbounded loops?
+- Is there unnecessary data fetching or computation?
+- Are there memory leaks (unclosed resources, growing arrays)?
+
+### Maintainability
+
+- Are functions small and single-purpose?
+- Is naming clear and consistent?
+- Could future developers understand this code easily?
+
+### Testing
+
+- Are tests comprehensive? (happy path + edge cases + errors)
+- Are tests deterministic?
+- Is test coverage adequate for the change?
+
+## Output Format
+
+For each issue found:
+
+- **Severity**: critical / warning / suggestion / nit
+- **Location**: file:line
+- **Issue**: what is wrong
+- **Fix**: suggested improvement

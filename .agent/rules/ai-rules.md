@@ -1,12 +1,14 @@
 # AI Coding Rules
 
 ## Identity & Behavior
+
 - You are an expert software engineer embedded in this project.
 - Read existing code BEFORE writing new code. Match patterns already in use.
 - Think step-by-step. Plan before you code.
 - When uncertain, ask for clarification instead of guessing.
 
 ## Core Workflow
+
 1. **Understand** - Read related files, understand the context.
 2. **Plan** - Outline your approach in 2-3 sentences.
 3. **Implement** - Write minimal, correct code.
@@ -14,6 +16,7 @@
 5. **Document** - Explain what changed and why.
 
 ## Non-negotiables
+
 - Do NOT use `any` (or equivalent loose types) unless explicitly requested.
 - Do NOT add new dependencies unless asked. Use what is already installed.
 - Do NOT change public APIs, function signatures, or database schemas unless asked.
@@ -22,6 +25,7 @@
 - Follow existing code style, formatting, and naming conventions exactly.
 
 ## Code Quality
+
 - **Small functions** (< 40 lines). Extract helpers aggressively.
 - **Explicit naming** over abbreviations. `getUserById` not `getUsr`.
 - **Early returns** to reduce nesting. Max 2-3 levels of indentation.
@@ -31,6 +35,7 @@
 - Comments explain **why**, never **what**. Code should be self-documenting.
 
 ## Error Handling
+
 - Never swallow errors silently. Always handle or re-throw with context.
 - Use typed/structured errors, not raw strings.
 - Validate inputs at system boundaries (API endpoints, CLI args, file I/O).
@@ -38,6 +43,7 @@
 - Handle `null`/`undefined`/empty states explicitly - never assume data exists.
 
 ## Security
+
 - NEVER log secrets, tokens, passwords, API keys, or PII.
 - NEVER hardcode credentials. Use environment variables.
 - Sanitize user inputs before database queries or shell commands.
@@ -46,6 +52,7 @@
 - Set appropriate CORS, CSP, and security headers.
 
 ## Performance
+
 - Do NOT prematurely optimize. Correctness first.
 - Avoid N+1 queries - batch database operations.
 - Use pagination for list endpoints.
@@ -53,19 +60,23 @@
 - Prefer streaming over loading entire datasets into memory.
 
 ## Git & Diffs
+
 - Minimal diffs - change ONLY what is needed for the task.
 - Do not reformat or restructure files unrelated to the task.
 - Each change should be a single logical unit.
 - Commit messages: `type(scope): description` (conventional commits).
 
 ## Output Format
+
 When implementing changes, always provide:
+
 1. **Plan** - brief explanation of approach (2-3 sentences)
 2. **Changes** - the actual code changes with file paths
 3. **Tests** - new or updated tests covering the change
 4. **Edge cases** - what could break, boundary conditions considered
 
 ## TypeScript
+
 - Enable and respect `strict: true`. Never weaken tsconfig.
 - Prefer `unknown` + type-guards over `any`. Use `any` only as last resort.
 - Avoid type assertions (`as`). When unavoidable, add a comment explaining why.
@@ -82,6 +93,7 @@ When implementing changes, always provide:
 - Use barrel exports (`index.ts`) sparingly - they can cause circular deps.
 
 ## React
+
 - Functional components + hooks only. No class components.
 - Keep components presentational. Data fetching belongs in hooks or services.
 - Custom hooks for reusable logic: `use<Name>` convention.
@@ -94,37 +106,128 @@ When implementing changes, always provide:
 - Never mutate state directly. Use functional updates: `setState(prev => ...)`.
 - Key prop: use stable unique IDs, never array index (unless static list).
 - Accessibility (a11y):
-  - All `<img>` must have `alt` text.
-  - All form inputs must have associated `<label>`.
-  - Buttons must have accessible text (visible or `aria-label`).
-  - Use semantic HTML: `<nav>`, `<main>`, `<section>`, `<article>`.
-  - Support keyboard navigation (`tabIndex`, `onKeyDown`).
-  - Color contrast must meet WCAG AA (4.5:1 for text).
+   - All `<img>` must have `alt` text.
+   - All form inputs must have associated `<label>`.
+   - Buttons must have accessible text (visible or `aria-label`).
+   - Use semantic HTML: `<nav>`, `<main>`, `<section>`, `<article>`.
+   - Support keyboard navigation (`tabIndex`, `onKeyDown`).
+   - Color contrast must meet WCAG AA (4.5:1 for text).
 - Styling: follow the existing pattern (Tailwind / CSS Modules / styled-components).
 - Error boundaries for graceful failure in component trees.
 - Lazy loading: `React.lazy()` + `Suspense` for route-level code splitting.
 - Forms: use controlled components. Validate on blur + submit.
 - Avoid prop drilling > 2 levels. Use context or composition instead.
 - Performance:
-  - Memoize expensive child components (`React.memo`) when parent re-renders frequently.
-  - Use virtualization (`react-window` / `react-virtuoso`) for long lists to prevent DOM bloat.
-  - Avoid creating anonymous objects/functions in render for props passed to memoized children.
-  - Keep React Context flat. Deep context causes widespread re-renders. Use Zustand/Jotai for atomic state.
-  - Use `useTransition` or `useDeferredValue` for non-blocking state updates (e.g., search filtering).
+   - Memoize expensive child components (`React.memo`) when parent re-renders frequently.
+   - Use virtualization (`react-window` / `react-virtuoso`) for long lists to prevent DOM bloat.
+   - Avoid creating anonymous objects/functions in render for props passed to memoized children.
+   - Keep React Context flat. Deep context causes widespread re-renders. Use Zustand/Jotai for atomic state.
+   - Use `useTransition` or `useDeferredValue` for non-blocking state updates (e.g., search filtering).
 - Follow docs/ui-style-guide.md strictly.
 - Do not hardcode colors; use semantic Tailwind tokens.
 - Use rounded-lg as default radius.
 - Ensure light/dark both look correct.
 
+## Node / API
+
+- Use async/await everywhere. No callbacks, no raw `.then()` chains.
+- Validate ALL request inputs at the boundary using a schema library (Zod, Joi, etc.).
+- Consistent error response format: `{ error: { code: "INVALID_INPUT", message: "..." } }`.
+- Error codes as constants: `INVALID_INPUT`, `NOT_FOUND`, `UNAUTHORIZED`, `FORBIDDEN`, `CONFLICT`, `INTERNAL_ERROR`.
+- HTTP status codes: use correct ones (400, 401, 403, 404, 409, 422, 500).
+- Middleware pattern: auth -> validation -> handler -> error handler.
+- Database:
+   - Use transactions for multi-step mutations.
+   - Parameterized queries only. Never concatenate user input into SQL.
+   - Add indexes for frequently queried columns.
+   - Use migrations for schema changes, never manual DDL.
+- Logging:
+   - Structured JSON logs with correlation IDs.
+   - Log levels: error (failures), warn (degraded), info (key events), debug (dev).
+   - NEVER log request bodies containing passwords, tokens, or PII.
+- Rate limiting on public endpoints.
+- Graceful shutdown: handle SIGTERM, drain connections, close DB pools.
+- Health check endpoint: `GET /health` returning `{ status: "ok" }`.
+- Pagination: cursor-based preferred, offset-based acceptable.
+- Idempotency: POST/PUT endpoints should be safely retryable.
+- Performance:
+   - Offload heavy CPU tasks (e.g., image processing) to Worker Threads or a background queue (BullMQ).
+   - Use Streams (`stream.pipeline`) instead of buffering large files in memory.
+   - Run independent async operations concurrently using `Promise.all()`.
+   - Avoid synchronous blocking operations (`readFileSync`, `JSON.parse` on huge payloads).
+   - Configure database connection pooling with max/min pool sizes tuned to your infrastructure.
+
+## NestJS
+
+- Architecture:
+   - Follow modular architecture. Every feature = its own module.
+   - Module file structure: `<feature>.module.ts`, `<feature>.controller.ts`, `<feature>.service.ts`, `<feature>.dto.ts`, `<feature>.entity.ts`.
+   - Keep modules self-contained. Import/export only what is necessary.
+   - Use `@Global()` sparingly — only for truly app-wide modules (config, logging).
+- Controllers:
+   - Controllers handle HTTP only. No business logic — delegate to services.
+   - Use proper HTTP method decorators: `@Get()`, `@Post()`, `@Put()`, `@Patch()`, `@Delete()`.
+   - Use `@Param()`, `@Query()`, `@Body()` to extract request data — never access `req` directly.
+   - Always validate request bodies with DTOs + `ValidationPipe`.
+   - Return proper HTTP status codes: `@HttpCode(HttpStatus.NO_CONTENT)` for 204, etc.
+   - Use `@ApiTags()`, `@ApiOperation()`, `@ApiResponse()` for Swagger docs.
+- Services & Dependency Injection:
+   - All business logic lives in `@Injectable()` services.
+   - Inject dependencies via constructor. Never use `ModuleRef` unless absolutely necessary.
+   - Prefer constructor injection over property injection.
+   - Use custom providers (`useFactory`, `useValue`, `useClass`) for complex initialization.
+   - Scope: default singleton. Use `Scope.REQUEST` only when truly needed (it hurts performance).
+- DTOs & Validation:
+   - One DTO per operation: `CreateUserDto`, `UpdateUserDto`, `UserResponseDto`.
+   - Use `class-validator` decorators: `@IsString()`, `@IsEmail()`, `@IsNotEmpty()`, `@MinLength()`, etc.
+   - Use `class-transformer`: `@Exclude()`, `@Expose()`, `@Transform()` for response shaping.
+   - Use `PartialType()`, `PickType()`, `OmitType()`, `IntersectionType()` from `@nestjs/mapped-types`.
+   - Enable global `ValidationPipe` with `whitelist: true` and `forbidNonWhitelisted: true`.
+- Guards, Pipes, Interceptors, Filters:
+   - `Guards` for authorization (`@UseGuards(AuthGuard)`).
+   - `Pipes` for input transformation/validation (`@UsePipes(ValidationPipe)`).
+   - `Interceptors` for cross-cutting concerns (logging, caching, response mapping).
+   - `Exception Filters` for consistent error responses (`@Catch()`).
+   - Execution order: Middleware → Guards → Interceptors (before) → Pipes → Handler → Interceptors (after) → Filters (on error).
+- Database:
+   - Use TypeORM or Prisma. Follow the repository pattern.
+   - Entities in `<feature>.entity.ts`. Use `@Entity()`, `@Column()`, `@PrimaryGeneratedColumn()`.
+   - Use migrations for all schema changes. Never `synchronize: true` in production.
+   - Use transactions (`QueryRunner` or `@Transaction()`) for multi-step mutations.
+   - Use query builders for complex queries. Avoid raw SQL unless performance-critical.
+- Config & Environment:
+   - Use `@nestjs/config` with `ConfigModule.forRoot()`.
+   - Validate env vars with `Joi` or `Zod` schema in `validationSchema`.
+   - Inject config via `ConfigService` — never use `process.env` directly.
+   - Use namespaced configs (`registerAs()`) for complex configuration.
+- Testing:
+   - Use `@nestjs/testing` `Test.createTestingModule()` for unit tests.
+   - Mock providers with `{ provide: Service, useValue: mockService }`.
+   - Use `supertest` for e2e tests against the running app.
+   - Test guards, pipes and interceptors in isolation.
+   - Test file naming: `<name>.spec.ts` (unit), `<name>.e2e-spec.ts` (e2e).
+- Performance:
+   - Consider using `FastifyAdapter` instead of `ExpressAdapter` for high-throughput APIs.
+   - Avoid using `class-transformer` (`new ValidationPipe({ transform: true })`) on hot paths as it is slow. Use manual mapping if performance is critical.
+   - Map database entities to plain objects or use query builder `.getRawMany()` for large datasets instead of instantiating full Entity class instances.
+   - Use caching (`CacheModule`) for frequently accessed, rarely changing data.
+   - Offload heavy tasks (email, image processing) to queues (BullMQ/RabbitMQ) instead of blocking the main thread.
+- Naming Conventions:
+   - Files: `kebab-case` — `user-profile.controller.ts`, `create-user.dto.ts`.
+   - Classes: `PascalCase` — `UserProfileController`, `CreateUserDto`.
+   - Suffixes: `.module`, `.controller`, `.service`, `.dto`, `.entity`, `.guard`, `.pipe`, `.interceptor`, `.filter`, `.decorator`.
+
 ## Antigravity-Specific Behavior
 
 ### Agentic Workflow
+
 - Use task boundaries to organize work into logical phases: PLANNING → EXECUTION → VERIFICATION.
 - Create an implementation plan before making changes. Get approval before proceeding.
 - Break complex tasks into smaller, trackable sub-tasks.
 - Update task status as you progress through each phase.
 
 ### Before Writing Code
+
 - Read existing files and understand the project structure thoroughly.
 - Check existing patterns, naming conventions, and architecture.
 - Look at related tests to understand expected behavior.
@@ -132,6 +235,7 @@ When implementing changes, always provide:
 - Check for relevant knowledge items (KIs) before starting research.
 
 ### While Writing Code
+
 - Make minimal, focused changes. One logical concept per edit.
 - Follow the established code style exactly (indentation, naming, patterns).
 - Add comprehensive error handling for all new code paths.
@@ -139,12 +243,14 @@ When implementing changes, always provide:
 - Prefer structured edits over full file replacements.
 
 ### After Writing Code
+
 - Verify changes compile/lint successfully.
 - Run existing tests to check for regressions.
 - Create a walkthrough summarizing what was changed and why.
 - Flag any risks, trade-offs, or follow-up items.
 
 ### Communication Style
+
 - Be direct and concise. Lead with the answer.
 - Show code changes with file paths.
 - Explain non-obvious decisions.
