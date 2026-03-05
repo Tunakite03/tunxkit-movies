@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, type FormEvent } from 'react';
+import { useState, useCallback, type FormEvent } from 'react';
 import { Loader2, Pencil } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -57,11 +57,13 @@ export function EditUserDialog({
 }: EditUserDialogProps) {
    const [form, setForm] = useState<EditUserFormState>(() => buildFormState(user));
 
-   useEffect(() => {
+   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+   if (isOpen !== prevIsOpen) {
+      setPrevIsOpen(isOpen);
       if (isOpen) {
          setForm(buildFormState(user));
       }
-   }, [isOpen, user]);
+   }
 
    const handleChange = useCallback((field: keyof EditUserFormState, value: string) => {
       setForm((prev) => ({ ...prev, [field]: value }));
@@ -126,7 +128,9 @@ export function EditUserDialog({
                      />
                   </div>
                   <div className="space-y-2">
-                     <label className="text-sm font-medium text-foreground">Ảnh đại diện (URL)</label>
+                     <label className="text-sm font-medium text-foreground">
+                        Ảnh đại diện (URL)
+                     </label>
                      <Input
                         value={form.image}
                         onChange={(e) => handleChange('image', e.target.value)}
@@ -157,12 +161,7 @@ export function EditUserDialog({
                </div>
 
                <DialogFooter className="mt-6">
-                  <Button
-                     type="button"
-                     variant="outline"
-                     onClick={onClose}
-                     disabled={isPending}
-                  >
+                  <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
                      Hủy
                   </Button>
                   <Button type="submit" disabled={isPending || !form.email.trim()}>

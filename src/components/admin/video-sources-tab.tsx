@@ -122,12 +122,7 @@ interface VideoSourcesTabProps {
  *
  * For TV shows, renders a season/episode picker before the sources table.
  */
-export function VideoSourcesTab({
-   mediaType,
-   mediaId,
-   mediaTitle,
-   seasons,
-}: VideoSourcesTabProps) {
+export function VideoSourcesTab({ mediaType, mediaId, mediaTitle, seasons }: VideoSourcesTabProps) {
    const { token } = useAuthStore();
    const queryClient = useQueryClient();
 
@@ -136,13 +131,11 @@ export function VideoSourcesTab({
    const [selectedEpisode, setSelectedEpisode] = useState<number | null>(null);
 
    const isTv = mediaType === 'tv' && seasons && seasons.length > 0;
-   const currentSeasonInfo = isTv
-      ? seasons.find((s) => s.seasonNumber === selectedSeason)
-      : null;
+   const currentSeasonInfo = isTv ? seasons.find((s) => s.seasonNumber === selectedSeason) : null;
 
    // For movies: no season/episode needed. For TV: use selected values.
-   const effectiveSeason = isTv ? selectedSeason ?? undefined : undefined;
-   const effectiveEpisode = isTv ? selectedEpisode ?? undefined : undefined;
+   const effectiveSeason = isTv ? (selectedSeason ?? undefined) : undefined;
+   const effectiveEpisode = isTv ? (selectedEpisode ?? undefined) : undefined;
 
    // Whether we have enough context to show/manage sources
    const canShowSources =
@@ -154,13 +147,7 @@ export function VideoSourcesTab({
    const [deleteTarget, setDeleteTarget] = useState<AdminVideoSource | null>(null);
    const [form, setForm] = useState<SourceFormState>(INITIAL_FORM);
 
-   const queryKey = [
-      'admin-video-sources',
-      mediaType,
-      mediaId,
-      effectiveSeason,
-      effectiveEpisode,
-   ];
+   const queryKey = ['admin-video-sources', mediaType, mediaId, effectiveSeason, effectiveEpisode];
 
    const { data, isLoading } = useQuery({
       queryKey,
@@ -222,12 +209,15 @@ export function VideoSourcesTab({
    const handleOpenCreate = useCallback(() => {
       setForm(INITIAL_FORM);
       setIsCreateOpen(true);
-   }, []);
+   }, [setIsCreateOpen]);
 
-   const handleOpenEdit = useCallback((source: AdminVideoSource) => {
-      setForm(buildFormFromSource(source));
-      setEditTarget(source);
-   }, []);
+   const handleOpenEdit = useCallback(
+      (source: AdminVideoSource) => {
+         setForm(buildFormFromSource(source));
+         setEditTarget(source);
+      },
+      [setEditTarget],
+   );
 
    const handleCreate = useCallback(
       (e: FormEvent) => {
@@ -385,9 +375,7 @@ export function VideoSourcesTab({
                               <TableHead className="hidden w-20 sm:table-cell">
                                  Chất lượng
                               </TableHead>
-                              <TableHead className="hidden w-20 md:table-cell">
-                                 Ngôn ngữ
-                              </TableHead>
+                              <TableHead className="hidden w-20 md:table-cell">Ngôn ngữ</TableHead>
                               <TableHead className="hidden w-16 md:table-cell">Ưu tiên</TableHead>
                               <TableHead className="w-20">Trạng thái</TableHead>
                               <TableHead className="w-24 text-right">Thao tác</TableHead>

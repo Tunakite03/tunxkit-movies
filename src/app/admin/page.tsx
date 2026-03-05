@@ -16,7 +16,6 @@ import {
    BarChart3,
    Zap,
    Wifi,
-   FileSpreadsheet,
    Plus,
    Radio,
    Activity,
@@ -118,9 +117,7 @@ function WelcomeHeader({ userName }: { readonly userName: string | null }) {
                <h1 className="text-2xl font-bold tracking-tight text-foreground">
                   {greeting}, {userName ?? 'Admin'} 👋
                </h1>
-               <p className="text-sm text-muted-foreground">
-                  Tổng quan hệ thống quản trị
-               </p>
+               <p className="text-sm text-muted-foreground">Tổng quan hệ thống quản trị</p>
             </div>
             <Badge
                variant="outline"

@@ -101,16 +101,20 @@ function EmbedPlayer({ source, title, onError }: VideoPlayerProps) {
    const [isLoaded, setIsLoaded] = useState(false);
    const [showHint, setShowHint] = useState(false);
 
-   useEffect(() => {
+   const [prevSourceUrl, setPrevSourceUrl] = useState(source.sourceUrl);
+   if (source.sourceUrl !== prevSourceUrl) {
+      setPrevSourceUrl(source.sourceUrl);
       setIsLoaded(false);
       setShowHint(false);
+   }
 
+   useEffect(() => {
       const timer = setTimeout(() => {
-         if (!isLoaded) setShowHint(true);
+         setShowHint(true);
       }, 8_000);
 
       return () => clearTimeout(timer);
-   }, [source.sourceUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+   }, [source.sourceUrl]);
 
    const handleLoad = useCallback(() => {
       setIsLoaded(true);

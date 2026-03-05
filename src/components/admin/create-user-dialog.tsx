@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, type FormEvent } from 'react';
+import { useState, useCallback, type FormEvent } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -66,7 +66,6 @@ export function CreateUserDialog({
    const [open, setOpen] = useState(false);
    const [form, setForm] = useState<CreateUserFormState>(INITIAL_FORM);
    const [emailError, setEmailError] = useState<string | null>(null);
-   const [emailTouched, setEmailTouched] = useState(false);
 
    const handleChange = useCallback((field: keyof CreateUserFormState, value: string) => {
       setForm((prev) => ({ ...prev, [field]: value }));
@@ -83,26 +82,25 @@ export function CreateUserDialog({
    }, []);
 
    const handleEmailBlur = useCallback(() => {
-      setEmailTouched(true);
       setEmailError(validateEmail(form.email));
    }, [form.email, validateEmail]);
 
-   useEffect(() => {
+   const [prevIsSuccess, setPrevIsSuccess] = useState(isSuccess);
+   if (isSuccess !== prevIsSuccess) {
+      setPrevIsSuccess(isSuccess);
       if (isSuccess && open) {
          setOpen(false);
          setForm(INITIAL_FORM);
          setEmailError(null);
-         setEmailTouched(false);
          onSuccessHandled?.();
       }
-   }, [isSuccess, open, onSuccessHandled]);
+   }
 
    const handleSubmit = useCallback(
       (e: FormEvent) => {
          e.preventDefault();
 
          const emailErr = validateEmail(form.email);
-         setEmailTouched(true);
          setEmailError(emailErr);
 
          if (emailErr || !form.password.trim()) return;

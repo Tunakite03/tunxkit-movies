@@ -1,25 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-   UserCircle,
-   ArrowLeft,
-   Save,
-   ExternalLink,
-   Loader2,
-   Star,
-   Film,
-   Tv,
-} from 'lucide-react';
+import { UserCircle, ArrowLeft, Save, ExternalLink, Loader2, Star, Film, Tv } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import {
-   getAdminPersonDetail,
-   updateAdminPerson,
-} from '@/services/admin-dashboard-service';
+import { getAdminPersonDetail, updateAdminPerson } from '@/services/admin-dashboard-service';
 import type { UpdatePersonData } from '@/services/admin-dashboard-service';
 import { useAuthStore } from '@/store/auth-store';
 import { IMAGE_SIZES } from '@/constants';
@@ -90,11 +78,9 @@ export default function AdminPersonDetailPage() {
       enabled: !!token && !isNaN(personId),
    });
 
-   useEffect(() => {
-      if (data && form === null) {
-         setForm(buildInitialForm(data));
-      }
-   }, [data, form]);
+   if (data && form === null) {
+      setForm(buildInitialForm(data));
+   }
 
    const updateMutation = useMutation({
       mutationFn: (payload: UpdatePersonData) =>
@@ -293,9 +279,7 @@ export default function AdminPersonDetailPage() {
                   <p className="mt-2 text-sm text-green-500">Cập nhật thành công!</p>
                )}
                {updateMutation.isError && (
-                  <p className="mt-2 text-sm text-destructive">
-                     Lỗi cập nhật. Vui lòng thử lại.
-                  </p>
+                  <p className="mt-2 text-sm text-destructive">Lỗi cập nhật. Vui lòng thử lại.</p>
                )}
             </div>
          )}
