@@ -239,6 +239,8 @@ export interface UpdateMovieData {
    readonly title?: string;
    readonly overview?: string;
    readonly tagline?: string;
+   readonly posterPath?: string;
+   readonly backdropPath?: string;
    readonly status?: string;
    readonly releaseDate?: string;
    readonly voteAverage?: number;

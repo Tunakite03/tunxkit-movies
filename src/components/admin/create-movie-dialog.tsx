@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useCallback, type FormEvent } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, ImageIcon } from 'lucide-react';
+import Image from 'next/image';
 
+import { IMAGE_SIZES } from '@/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,6 +25,8 @@ interface CreateMovieFormState {
    status: string;
    runtime: string;
    voteAverage: string;
+   posterPath: string;
+   backdropPath: string;
 }
 
 const INITIAL_FORM: CreateMovieFormState = {
@@ -33,6 +37,8 @@ const INITIAL_FORM: CreateMovieFormState = {
    status: 'Released',
    runtime: '0',
    voteAverage: '0',
+   posterPath: '',
+   backdropPath: '',
 };
 
 interface CreateMovieDialogProps {
@@ -44,6 +50,8 @@ interface CreateMovieDialogProps {
       status?: string;
       runtime?: number;
       voteAverage?: number;
+      posterPath?: string;
+      backdropPath?: string;
    }) => void;
    readonly isPending: boolean;
    readonly isSuccess: boolean;
@@ -72,6 +80,8 @@ export function CreateMovieDialog({ onSubmit, isPending, isSuccess }: CreateMovi
             status: form.status || undefined,
             runtime: form.runtime ? Number(form.runtime) : undefined,
             voteAverage: form.voteAverage ? Number(form.voteAverage) : undefined,
+            posterPath: form.posterPath || undefined,
+            backdropPath: form.backdropPath || undefined,
          });
       },
       [form, onSubmit],
@@ -170,6 +180,44 @@ export function CreateMovieDialog({ onSubmit, isPending, isSuccess }: CreateMovi
                         onChange={(e) => handleChange('overview', e.target.value)}
                         placeholder="Nhập mô tả phim..."
                      />
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-sm font-medium text-foreground">Ảnh poster</label>
+                     <Input
+                        value={form.posterPath}
+                        onChange={(e) => handleChange('posterPath', e.target.value)}
+                        placeholder="/abc123.jpg"
+                     />
+                     {form.posterPath && (
+                        <div className="relative h-[120px] w-[80px] overflow-hidden rounded-md border border-border">
+                           <Image
+                              src={`${IMAGE_SIZES.poster.small}${form.posterPath}`}
+                              alt="Poster preview"
+                              fill
+                              className="object-cover"
+                              unoptimized
+                           />
+                        </div>
+                     )}
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-sm font-medium text-foreground">Ảnh nền</label>
+                     <Input
+                        value={form.backdropPath}
+                        onChange={(e) => handleChange('backdropPath', e.target.value)}
+                        placeholder="/abc123.jpg"
+                     />
+                     {form.backdropPath && (
+                        <div className="relative h-[68px] w-full overflow-hidden rounded-md border border-border">
+                           <Image
+                              src={`${IMAGE_SIZES.backdrop.small}${form.backdropPath}`}
+                              alt="Backdrop preview"
+                              fill
+                              className="object-cover"
+                              unoptimized
+                           />
+                        </div>
+                     )}
                   </div>
                </div>
 
