@@ -24,16 +24,13 @@ export function UserMenu() {
    const router = useRouter();
 
    if (!isHydrated) {
-      return <div className='size-8 animate-pulse rounded-full bg-muted' />;
+      return <div className="size-8 animate-pulse rounded-full bg-muted" />;
    }
 
    if (!isAuthenticated || !user) {
       return (
-         <Button
-            asChild
-            size='sm'
-         >
-            <Link href='/sign-in'>Đăng nhập</Link>
+         <Button asChild size="sm">
+            <Link href="/sign-in">Đăng nhập</Link>
          </Button>
       );
    }
@@ -43,8 +40,8 @@ export function UserMenu() {
    const fallback = (name || email).charAt(0).toUpperCase() || 'U';
 
    function handleSignOut() {
-      startTransition(() => {
-         signOutAction();
+      startTransition(async () => {
+         await signOutAction();
          router.push('/');
       });
    }
@@ -53,21 +50,18 @@ export function UserMenu() {
       <DropdownMenu>
          <DropdownMenuTrigger asChild>
             <button
-               className='rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
-               aria-label='Menu tài khoản'
+               className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+               aria-label="Menu tài khoản"
                disabled={isPending}
             >
                {isPending ? (
-                  <div className='flex size-8 items-center justify-center rounded-full bg-muted'>
-                     <Loader2 className='size-4 animate-spin' />
+                  <div className="flex size-8 items-center justify-center rounded-full bg-muted">
+                     <Loader2 className="size-4 animate-spin" />
                   </div>
                ) : (
-                  <Avatar className='size-8'>
-                     <AvatarImage
-                        src={user.image ?? undefined}
-                        alt={name || 'Avatar'}
-                     />
-                     <AvatarFallback className='bg-primary text-primary-foreground text-xs font-semibold'>
+                  <Avatar className="size-8">
+                     <AvatarImage src={user.image ?? undefined} alt={name || 'Avatar'} />
+                     <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                         {fallback}
                      </AvatarFallback>
                   </Avatar>
@@ -75,39 +69,30 @@ export function UserMenu() {
             </button>
          </DropdownMenuTrigger>
 
-         <DropdownMenuContent
-            align='end'
-            className='w-52'
-         >
-            <DropdownMenuLabel className='font-normal'>
-               <p className='font-medium'>{name || '(Chưa đặt tên)'}</p>
-               <p className='text-xs text-muted-foreground truncate'>{email}</p>
+         <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuLabel className="font-normal">
+               <p className="font-medium">{name || '(Chưa đặt tên)'}</p>
+               <p className="text-xs text-muted-foreground truncate">{email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-               <Link
-                  href='/account'
-                  className='cursor-pointer'
-               >
-                  <Settings className='mr-2 size-4' />
+               <Link href="/account" className="cursor-pointer">
+                  <Settings className="mr-2 size-4" />
                   Tài khoản
                </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-               <Link
-                  href='/watchlist'
-                  className='cursor-pointer'
-               >
-                  <User className='mr-2 size-4' />
+               <Link href="/watchlist" className="cursor-pointer">
+                  <User className="mr-2 size-4" />
                   Yêu thích
                </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-               className='text-destructive focus:text-destructive cursor-pointer'
+               className="text-destructive focus:text-destructive cursor-pointer"
                onClick={handleSignOut}
             >
-               <LogOut className='mr-2 size-4' />
+               <LogOut className="mr-2 size-4" />
                Đăng xuất
             </DropdownMenuItem>
          </DropdownMenuContent>

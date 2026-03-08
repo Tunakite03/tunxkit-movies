@@ -1,36 +1,145 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TunxKit Movies Frontend
+
+Frontend for the TunxKit Movies platform, built with Next.js App Router. This app consumes the TunxKit Movies NestJS API to provide movie discovery, TV browsing, watch pages, authentication flows, watchlists, and admin screens.
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript 5
+- Tailwind CSS 4
+- TanStack Query
+- Zustand
+- shadcn/ui + Radix UI
+- Lucide React
+- Framer Motion
+- HLS.js
+
+## Features
+
+- Home page with trending and curated movie/TV sections
+- Browse pages for movies, TV series, cinema releases, and TV shows
+- Search and genre-based discovery
+- Movie / TV detail pages with SEO metadata and JSON-LD
+- Watch pages for playing content
+- Email/password auth flows
+- Google OAuth callback flow
+- Forgot password, reset password, and email verification pages
+- User account and watchlist management
+- Admin dashboard for movies, TV shows, people, genres, users, imports, and video sources
+- Responsive UI with dark mode support
+
+## Project Structure
+
+```text
+src/
+├── actions/        # Server/client actions such as auth helpers
+├── app/            # App Router pages, layouts, route handlers, metadata
+├── components/     # Reusable UI and feature components
+├── config/         # App-level configuration
+├── constants/      # Static constants such as categories and site metadata
+├── hooks/          # Custom React hooks
+├── lib/            # Shared utilities, API client, SEO helpers
+├── services/       # API-facing service functions
+├── store/          # Zustand stores and providers
+└── types/          # Shared TypeScript types
+
+public/
+├── samples/        # Sample/static assets
+└── placeholder-*   # Fallback media placeholders
+```
+
+## Prerequisites
+
+- Node.js 20+
+- pnpm 10+
+- A running TunxKit Movies backend API
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Create your local environment file
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy `.env.example` to `.env.local` and update the values as needed.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env.local
+```
 
-## Learn More
+On Windows PowerShell:
 
-To learn more about Next.js, take a look at the following resources:
+```powershell
+Copy-Item .env.example .env.local
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Start the backend API
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+By default, the frontend expects the backend at:
 
-## Deploy on Vercel
+- `http://localhost:4000/api/v1`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+If your API runs elsewhere, update `NEXT_PUBLIC_API_URL` in `.env.local`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 4. Start the development server
+
+```bash
+pnpm dev
+```
+
+## Local URLs
+
+- Frontend: `http://localhost:3000`
+- Default backend API: `http://localhost:4000/api/v1`
+
+## Environment Variables
+
+Key variables used by the frontend:
+
+| Variable               | Required | Purpose                                                                      |
+| ---------------------- | -------- | ---------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`  | Yes      | Base URL for the NestJS API, for example `http://localhost:4000/api/v1`      |
+| `NEXT_PUBLIC_SITE_URL` | No       | Public site URL used for canonical links, Open Graph, and other SEO metadata |
+
+If `NEXT_PUBLIC_SITE_URL` is not set, the app falls back to `https://tunxkit-movies.vercel.app`.
+
+## Available Scripts
+
+| Command        | Description                          |
+| -------------- | ------------------------------------ |
+| `pnpm dev`     | Start the Next.js development server |
+| `pnpm build`   | Build the production bundle          |
+| `pnpm start`   | Start the production server          |
+| `pnpm lint`    | Run ESLint                           |
+| `pnpm prepare` | Install Husky hooks                  |
+
+## Docker
+
+The project includes a multi-stage Dockerfile that builds a standalone Next.js image.
+
+### Build the image
+
+```bash
+docker build -t tunxkit-movies-fe .
+```
+
+### Run the container
+
+```bash
+docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=http://host.docker.internal:4000/api/v1 tunxkit-movies-fe
+```
+
+## Deployment Notes
+
+- `next.config.ts` uses `output: 'standalone'`
+- Remote images are enabled for TMDB and Google profile images
+- `vercel.json` is present for Vercel deployment compatibility
+- Set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_SITE_URL` in your deployment environment
+
+## Contributing
+
+Please follow the repository's linting, formatting, and commit conventions when contributing changes.

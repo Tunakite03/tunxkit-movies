@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, type FormEvent } from 'react';
-import { Plus, Loader2, ImageIcon } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
 import { IMAGE_SIZES } from '@/constants';

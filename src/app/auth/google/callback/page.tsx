@@ -23,8 +23,9 @@ export default function GoogleCallbackPage() {
       hasProcessed.current = true;
 
       const token = searchParams.get('token');
+      const refreshToken = searchParams.get('refreshToken');
 
-      if (!token) {
+      if (!token || !refreshToken) {
          router.replace('/sign-in');
          return;
       }
@@ -32,7 +33,7 @@ export default function GoogleCallbackPage() {
       // Validate token by fetching user profile, then store auth state
       fetchAPI<AuthUser>('/auth/me', { token, revalidate: false, cache: 'no-store' })
          .then((user) => {
-            setAuth(token, user);
+            setAuth(token, refreshToken, user);
             router.replace('/');
          })
          .catch(() => {
@@ -42,10 +43,10 @@ export default function GoogleCallbackPage() {
    }, [searchParams, router, setAuth, logout]);
 
    return (
-      <div className='flex min-h-screen items-center justify-center'>
-         <div className='flex flex-col items-center gap-3'>
-            <Loader2 className='size-8 animate-spin text-primary' />
-            <p className='text-sm text-muted-foreground'>Đang xử lý đăng nhập...</p>
+      <div className="flex min-h-screen items-center justify-center">
+         <div className="flex flex-col items-center gap-3">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Đang xử lý đăng nhập...</p>
          </div>
       </div>
    );
