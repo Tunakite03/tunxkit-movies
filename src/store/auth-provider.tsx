@@ -12,7 +12,7 @@ import { fetchAPI } from '@/lib/api-client';
  * If the token is invalid or expired, logs the user out.
  */
 export function AuthProvider({ children }: { readonly children: ReactNode }) {
-   const { token, isHydrated, setAuth, logout } = useAuthStore();
+   const { token, isHydrated, updateUser, logout } = useAuthStore();
    const hasValidated = useRef(false);
 
    useEffect(() => {
@@ -22,9 +22,9 @@ export function AuthProvider({ children }: { readonly children: ReactNode }) {
       if (!token) return;
 
       fetchAPI<AuthUser>('/auth/me', { token, revalidate: false, cache: 'no-store' })
-         .then((user) => setAuth(token, user))
+         .then((user) => updateUser(user))
          .catch(() => logout());
-   }, [isHydrated, token, setAuth, logout]);
+   }, [isHydrated, token, updateUser, logout]);
 
    return <>{children}</>;
 }

@@ -11,6 +11,8 @@ import { deleteAccount, signOutAction } from '@/actions/auth-actions';
 export function DangerZone() {
    const [isDeleting, setIsDeleting] = useState(false);
    const [confirm, setConfirm] = useState('');
+   const [password, setPassword] = useState('');
+   const [error, setError] = useState('');
    const [isSignOutPending, startSignOut] = useTransition();
    const [isDeletePending, startDelete] = useTransition();
    const router = useRouter();
@@ -18,80 +20,100 @@ export function DangerZone() {
    const CONFIRM_WORD = 'XÓA TÀI KHOẢN';
 
    function handleSignOut() {
-      startSignOut(() => {
-         signOutAction();
+      startSignOut(async () => {
+         await signOutAction();
          router.push('/');
       });
    }
 
    function handleDeleteAccount() {
       if (confirm !== CONFIRM_WORD) return;
+      setError('');
       startDelete(async () => {
-         await deleteAccount();
+         const result = await deleteAccount(password || undefined);
+         if (!result.success) {
+            setError(result.message);
+            return;
+         }
          router.push('/');
       });
    }
 
    return (
-      <div className='space-y-6'>
+      <div className="space-y-6">
          {/* Sign out */}
-         <div className='flex items-center justify-between'>
+         <div className="flex items-center justify-between">
             <div>
-               <p className='font-medium'>Đăng xuất</p>
-               <p className='text-sm text-muted-foreground'>Đăng xuất khỏi tất cả thiết bị</p>
+               <p className="font-medium">Đăng xuất</p>
+               <p className="text-sm text-muted-foreground">Đăng xuất khỏi tất cả thiết bị</p>
             </div>
-            <Button
-               variant='outline'
-               onClick={handleSignOut}
-               disabled={isSignOutPending}
-            >
-               {isSignOutPending && <Loader2 className='mr-2 size-4 animate-spin' />}
+            <Button variant="outline" onClick={handleSignOut} disabled={isSignOutPending}>
+               {isSignOutPending && <Loader2 className="mr-2 size-4 animate-spin" />}
                Đăng xuất
             </Button>
          </div>
 
          {/* Delete account */}
          {!isDeleting ? (
-            <div className='flex items-center justify-between'>
+            <div className="flex items-center justify-between">
                <div>
-                  <p className='font-medium text-destructive'>Xóa tài khoản</p>
-                  <p className='text-sm text-muted-foreground'>Xóa vĩnh viễn tài khoản và tất cả dữ liệu</p>
+                  <p className="font-medium text-destructive">Xóa tài khoản</p>
+                  <p className="text-sm text-muted-foreground">
+                     Xóa vĩnh viễn tài khoản và tất cả dữ liệu
+                  </p>
                </div>
-               <Button
-                  variant='destructive'
-                  onClick={() => setIsDeleting(true)}
-               >
+               <Button variant="destructive" onClick={() => setIsDeleting(true)}>
                   Xóa tài khoản
                </Button>
             </div>
          ) : (
-            <div className='space-y-3 rounded-lg border border-destructive/50 p-4'>
-               <div className='flex items-center gap-2 text-destructive'>
-                  <AlertTriangle className='size-5' />
-                  <p className='font-medium'>Hành động này không thể hoàn tác!</p>
+            <div className="space-y-3 rounded-lg border border-destructive/50 p-4">
+               <div className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="size-5" />
+                  <p className="font-medium">Hành động này không thể hoàn tác!</p>
                </div>
-               <p className='text-sm text-muted-foreground'>
-                  Nhập <span className='font-mono font-bold text-foreground'>{CONFIRM_WORD}</span> để xác nhận
+               {error && (
+                  <p className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                     {error}
+                  </p>
+               )}
+               <div className="space-y-1.5">
+                  <label htmlFor="delete-password" className="text-sm font-medium">
+                     Mật khẩu (nếu đăng ký bằng email)
+                  </label>
+                  <Input
+                     id="delete-password"
+                     type="password"
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
+                     placeholder="Nhập mật khẩu để xác nhận"
+                  />
+               </div>
+               <p className="text-sm text-muted-foreground">
+                  Nhập <span className="font-mono font-bold text-foreground">{CONFIRM_WORD}</span>{' '}
+                  để xác nhận
                </p>
                <Input
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   placeholder={CONFIRM_WORD}
                />
-               <div className='flex gap-2'>
+               <div className="flex gap-2">
                   <Button
-                     variant='destructive'
+                     variant="destructive"
                      onClick={handleDeleteAccount}
                      disabled={confirm !== CONFIRM_WORD || isDeletePending}
                   >
-                     {isDeletePending && <Loader2 className='mr-2 size-4 animate-spin' />}
+                     {isDeletePending && <Loader2 className="mr-2 size-4 animate-spin" />}
                      Xác nhận xóa
                   </Button>
                   <Button
-                     variant='outline'
+                     variant="outline"
                      onClick={() => {
                         setIsDeleting(false);
                         setConfirm('');
+                        setPassword('');
+                        setError('');
                      }}
                   >
                      Hủy

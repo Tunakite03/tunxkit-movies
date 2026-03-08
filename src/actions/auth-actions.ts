@@ -10,6 +10,7 @@ export interface ActionResult {
 
 interface AuthResponse {
    readonly accessToken: string;
+   readonly refreshToken: string;
    readonly user: AuthUser;
 }
 
@@ -65,16 +66,30 @@ export async function signInWithCredentials(
          revalidate: false,
          cache: 'no-store',
       });
-      useAuthStore.getState().setAuth(data.accessToken, data.user);
+      useAuthStore.getState().setAuth(data.accessToken, data.refreshToken, data.user);
       return { success: true, message: 'Đăng nhập thành công!' };
    } catch (error) {
       return { success: false, message: error instanceof Error ? error.message : 'Đã xảy ra lỗi.' };
    }
 }
 
-/** Sign out — clears local auth state */
-export function signOutAction(): void {
+/** Sign out — invalidates refresh token server-side + clears local auth state */
+export async function signOutAction(): Promise<void> {
+   const { refreshToken } = useAuthStore.getState();
    useAuthStore.getState().logout();
+
+   if (refreshToken) {
+      try {
+         await fetchAPI('/auth/logout', {
+            method: 'POST',
+            body: { refreshToken },
+            revalidate: false,
+            cache: 'no-store',
+         });
+      } catch {
+         // Logout locally even if server call fails
+      }
+   }
 }
 
 /** Update the current user's display name */
@@ -93,15 +108,15 @@ export async function updateProfile(
    }
 
    try {
-      const result = await fetchAPI<ActionResult>('/auth/profile', {
+      const data = await fetchAPI<AuthResponse>('/auth/profile', {
          method: 'PATCH',
          body: { name: name.trim() },
          token,
          revalidate: false,
          cache: 'no-store',
       });
-      useAuthStore.getState().updateUser({ name: name.trim() });
-      return result;
+      useAuthStore.getState().setAuth(data.accessToken, data.refreshToken, data.user);
+      return { success: true, message: 'Cập nhật hồ sơ thành công.' };
    } catch (error) {
       return {
          success: false,
@@ -144,7 +159,7 @@ export async function updatePassword(formData: FormData): Promise<ActionResult> 
 }
 
 /** Delete the current user's account */
-export async function deleteAccount(): Promise<ActionResult> {
+export async function deleteAccount(password?: string): Promise<ActionResult> {
    const { token } = useAuthStore.getState();
    if (!token) {
       return { success: false, message: 'Bạn cần đăng nhập.' };
@@ -153,6 +168,7 @@ export async function deleteAccount(): Promise<ActionResult> {
    try {
       const result = await fetchAPI<ActionResult>('/auth/account', {
          method: 'DELETE',
+         body: password ? { password } : {},
          token,
          revalidate: false,
          cache: 'no-store',
@@ -217,4 +233,66 @@ export async function resetPassword(token: string, password: string): Promise<Ac
 /** Redirect user to the backend Google OAuth endpoint */
 export function signInWithGoogle(): void {
    window.location.href = `${API_URL}/auth/google`;
+}
+
+/** Refresh access token using the stored refresh token */
+export async function refreshAccessToken(): Promise<boolean> {
+   const { refreshToken } = useAuthStore.getState();
+   if (!refreshToken) return false;
+
+   try {
+      const data = await fetchAPI<AuthResponse>('/auth/refresh', {
+         method: 'POST',
+         body: { refreshToken },
+         revalidate: false,
+         cache: 'no-store',
+      });
+      useAuthStore.getState().setAuth(data.accessToken, data.refreshToken, data.user);
+      return true;
+   } catch {
+      useAuthStore.getState().logout();
+      return false;
+   }
+}
+
+/** Verify email using a verification token */
+export async function verifyEmail(token: string): Promise<ActionResult> {
+   if (!token) {
+      return { success: false, message: 'Token xác minh không hợp lệ.' };
+   }
+
+   try {
+      return await fetchAPI<ActionResult>('/auth/verify-email', {
+         method: 'POST',
+         body: { token },
+         revalidate: false,
+         cache: 'no-store',
+      });
+   } catch (error) {
+      return {
+         success: false,
+         message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      };
+   }
+}
+
+/** Resend the email verification link */
+export async function resendVerification(email: string): Promise<ActionResult> {
+   if (!email.trim()) {
+      return { success: false, message: 'Email không được để trống.' };
+   }
+
+   try {
+      return await fetchAPI<ActionResult>('/auth/resend-verification', {
+         method: 'POST',
+         body: { email: email.trim() },
+         revalidate: false,
+         cache: 'no-store',
+      });
+   } catch (error) {
+      return {
+         success: false,
+         message: error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      };
+   }
 }
